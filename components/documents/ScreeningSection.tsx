@@ -9,8 +9,9 @@ export interface ScreeningQuestion {
   id: string;
   label: string;
   helpText?: string;
-  type: 'yes-no' | 'radio' | 'checkbox' | 'text' | 'textarea';
+  type: 'yes-no' | 'radio' | 'checkbox' | 'text' | 'textarea' | 'number';
   options?: { value: string; label: string }[];
+  placeholder?: string;
   required?: boolean;
   value?: any;
   onChange?: (value: any) => void;
@@ -183,6 +184,32 @@ export const ScreeningSection: React.FC<ScreeningSectionProps> = ({
           </div>
         );
 
+      case 'number':
+        return (
+          <div key={question.id} className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-body-sm font-medium text-gray-700">
+                {question.label}
+                {question.required && <span className="text-cairos-alert ml-1">*</span>}
+              </label>
+              {question.helpText && (
+                <div className="group relative">
+                  <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
+                  <div className="absolute left-0 top-6 z-10 hidden group-hover:block w-64 p-2 bg-gray-900 text-white text-body-xs rounded-lg shadow-lg">
+                    {question.helpText}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Input
+              type="number"
+              value={question.value || ''}
+              onChange={(e) => question.onChange?.(e.target.value)}
+              placeholder={question.placeholder || question.options?.[0]?.label}
+            />
+          </div>
+        );
+
       case 'text':
       default:
         return (
@@ -204,7 +231,7 @@ export const ScreeningSection: React.FC<ScreeningSectionProps> = ({
             <Input
               value={question.value || ''}
               onChange={(e) => question.onChange?.(e.target.value)}
-              placeholder={question.options?.[0]?.label}
+              placeholder={question.placeholder || question.options?.[0]?.label}
             />
           </div>
         );

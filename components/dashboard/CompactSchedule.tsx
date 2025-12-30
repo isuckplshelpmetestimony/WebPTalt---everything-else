@@ -46,7 +46,7 @@ export const CompactSchedule: React.FC<CompactScheduleProps> = ({
   };
 
   return (
-    <Card className="flex flex-col" style={{ maxHeight: '600px' }}>
+    <Card className="flex flex-col max-h-[600px]">
       <div className="flex items-center gap-2 mb-4">
         <Calendar className="w-5 h-5 text-cairos-primary" />
         <h2 className="text-h3">

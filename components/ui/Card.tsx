@@ -6,6 +6,7 @@ import { clsx } from 'clsx';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   padding?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
 }
@@ -13,6 +14,7 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({
   children,
   className,
+  style,
   padding = 'md',
   onClick,
 }) => {
@@ -30,6 +32,7 @@ export const Card: React.FC<CardProps> = ({
         onClick && 'cursor-pointer hover:shadow-md transition-shadow',
         className
       )}
+      style={style}
       onClick={onClick}
     >
       {children}

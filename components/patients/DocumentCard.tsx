@@ -45,7 +45,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
             <div className="flex items-center gap-2">
               <h4 className="text-body font-medium">{document.type}</h4>
               {document.locked && (
-                <Lock className="w-4 h-4 text-gray-500" title="Locked" />
+                <Lock className="w-4 h-4 text-gray-500" />
               )}
             </div>
             <div className="text-body-sm text-gray-600 mt-1">
