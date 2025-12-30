@@ -45,3 +45,5 @@ export const WCMedicalReportView: React.FC<WCMedicalReportViewProps> = ({ docume
   );
 };
 
+
+

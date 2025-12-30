@@ -99,3 +99,5 @@ export const SOAPNoteView: React.FC<SOAPNoteViewProps> = ({ document }) => {
   );
 };
 
+
+

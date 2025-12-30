@@ -19,7 +19,7 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-body-sm font-medium text-gray-700 mb-8">
+        <label className="block text-body-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
@@ -39,7 +39,7 @@ export const Select: React.FC<SelectProps> = ({
         ))}
       </select>
       {error && (
-        <p className="mt-8 text-body-sm text-cairos-alert">{error}</p>
+        <p className="mt-1 text-body-sm text-cairos-alert">{error}</p>
       )}
     </div>
   );

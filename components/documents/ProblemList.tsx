@@ -75,8 +75,7 @@ export const ProblemList: React.FC<ProblemListProps> = ({
   return (
     <div className="space-y-4">
       {/* Header with Action Buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h4 className="text-body-sm font-semibold text-gray-700">Problem List</h4>
+      <div className="flex items-center justify-end flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             type="button"

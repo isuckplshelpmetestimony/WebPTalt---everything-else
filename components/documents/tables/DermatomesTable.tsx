@@ -235,3 +235,5 @@ export const DermatomesTable: React.FC<DermatomesTableProps> = ({
   );
 };
 
+
+

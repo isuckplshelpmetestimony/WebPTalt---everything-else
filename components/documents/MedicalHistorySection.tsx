@@ -314,3 +314,5 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
   );
 };
 
+
+

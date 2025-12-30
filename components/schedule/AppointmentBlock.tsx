@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Appointment } from '@/lib/types/schedule';
 import { format, differenceInMinutes } from 'date-fns';
 import { clsx } from 'clsx';
@@ -18,6 +19,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   slotInterval,
   topOffset = 0,
 }) => {
+  const router = useRouter();
   const start = new Date(appointment.startTime);
   const end = new Date(appointment.endTime);
   const duration = differenceInMinutes(end, start);
@@ -30,6 +32,20 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     'checked-in': 'bg-green-100 border-l-4 border-green-500 text-green-900',
     'no-show': 'bg-red-100 border-l-4 border-red-500 text-red-900',
     canceled: 'bg-gray-100 border-l-4 border-gray-400 text-gray-600',
+  };
+  
+  const handleClick = (e: React.MouseEvent) => {
+    // Only handle left mouse button clicks
+    if (e.button === 0 || e.type === 'click') {
+      e.preventDefault();
+      e.stopPropagation();
+      router.push(`/patients/${appointment.patientId}`);
+    }
+  };
+  
+  const handleContextMenu = (e: React.MouseEvent) => {
+    // Allow context menu to work normally on right-click
+    e.stopPropagation();
   };
   
   return (
@@ -45,6 +61,8 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         minHeight: '20px',
       }}
       title={`${appointment.patientName} - ${appointment.type} (${format(start, 'h:mm')} - ${format(end, 'h:mm a')})`}
+      onClick={handleClick}
+      onContextMenu={handleContextMenu}
     >
       <div className="flex flex-col h-full justify-between">
         <div className="flex-1 min-w-0">

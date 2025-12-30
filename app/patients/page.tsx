@@ -186,10 +186,10 @@ export default function PatientsPage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => router.push(`/schedule?patient=${patient.id}`)}
+                  onClick={() => router.push(`/documents/new/${encodeURIComponent('PT Daily Note')}?patient=${patient.id}`)}
                   className="flex-1"
                 >
-                  Schedule
+                  Add Daily Note
                 </Button>
               </div>
             </Card>

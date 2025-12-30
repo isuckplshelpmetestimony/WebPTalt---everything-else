@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card } from '../ui/Card';
-import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, Mic } from 'lucide-react';
 import { TreatmentsTable } from './TreatmentsTable';
 import { ROMTable, ROMEntry } from './tables/ROMTable';
 import { MuscleTestingTable, MuscleTestingEntry } from './tables/MuscleTestingTable';
@@ -410,11 +410,21 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
             <CheckCircle2 className="w-4 h-4 text-cairos-success" />
           )}
         </div>
-        {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Voice input"
+          >
+            <Mic className="w-5 h-5 text-gray-400" />
+          </button>
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
+        </div>
       </button>
 
       {isExpanded && (
@@ -443,7 +453,7 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
           <div className="border border-cairos-border rounded-xl p-4">
             <button
               onClick={() => setGeneralExpanded(!generalExpanded)}
-              className="w-full flex items-center justify-between mb-4"
+              className="w-full flex items-center justify-between mb-4 hover:bg-gray-50 -mx-4 px-4 py-2 rounded-lg transition-colors cursor-pointer"
             >
               <h4 className="text-body-sm font-semibold text-gray-700">General</h4>
               {generalExpanded ? (
@@ -519,7 +529,7 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
           <div className="border border-cairos-border rounded-xl p-4">
             <button
               onClick={() => setNeurologicalExpanded(!neurologicalExpanded)}
-              className="w-full flex items-center justify-between mb-4"
+              className="w-full flex items-center justify-between mb-4 hover:bg-gray-50 -mx-4 px-4 py-2 rounded-lg transition-colors cursor-pointer"
             >
               <h4 className="text-body-sm font-semibold text-gray-700">Neurological</h4>
               {neurologicalExpanded ? (

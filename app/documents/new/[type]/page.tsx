@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { DocumentEditorHeader } from '@/components/documents/DocumentEditorHeader';
 import { SubjectiveSection } from '@/components/documents/SubjectiveSection';
 import { ObjectiveSection } from '@/components/documents/ObjectiveSection';
@@ -16,7 +16,13 @@ import { AssessmentSection } from '@/components/documents/AssessmentSection';
 import { Problem } from '@/components/documents/ProblemList';
 import { GoalsSection } from '@/components/documents/GoalsSection';
 import { PlanSection } from '@/components/documents/PlanSection';
+import dynamic from 'next/dynamic';
 import { CommonPhrasesLibrary } from '@/components/documents/CommonPhrasesLibrary';
+
+const BillingSection = dynamic(
+  () => import('@/components/documents/BillingSection').then(mod => ({ default: mod.BillingSection })),
+  { ssr: false }
+);
 import { DocumentNavigator } from '@/components/documents/DocumentNavigator';
 import { MedicalHistorySection, SurgeryEntry, MedicalCondition, Medication } from '@/components/documents/MedicalHistorySection';
 import { PainHistorySection, PainArea, PainDescription } from '@/components/documents/PainHistorySection';
@@ -35,40 +41,216 @@ import { DocumentType } from '@/lib/types/document';
 import { Patient, Case } from '@/lib/types/patient';
 import { FileText, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Mock data - replace with actual API calls
-const mockPatient: Patient = {
-  id: '1',
-  name: 'ROBERT D MCMULLEN JR',
-  dob: new Date('1980-05-15'),
-  gender: 'Male',
-  phone: '(555) 123-4567',
-  email: 'robert.mcmullen@example.com',
-  address: {
-    street: '123 Main Street',
-    city: 'New York',
-    state: 'NY',
-    zip: '10001',
-  },
-  cases: [
-    {
+// Mock patient data - replace with actual API calls
+const getMockPatient = (patientId: string): Patient => {
+  const patients: Record<string, Patient> = {
+    '1': {
       id: '1',
-      name: '[WC] 12/15/2025: LUMBAR',
-      createdDate: new Date('2025-12-15'),
-      visitsRemaining: 0,
-      expirationDate: new Date('2025-12-19'),
-      authorizationStatus: 'expiring',
+      name: 'ROBERT D MCMULLEN JR',
+      dob: new Date('1980-05-15'),
+      gender: 'Male',
+      phone: '(555) 123-4567',
+      email: 'robert.mcmullen@example.com',
+      address: {
+        street: '123 Main Street',
+        city: 'New York',
+        state: 'NY',
+        zip: '10001',
+      },
+      cases: [
+        {
+          id: '1',
+          name: '[WC] 12/15/2025: LUMBAR',
+          createdDate: new Date('2025-12-15'),
+          visitsRemaining: 0,
+          expirationDate: new Date('2025-12-19'),
+          authorizationStatus: 'expiring',
+        },
+      ],
+      insurance: {
+        id: '1',
+        name: 'NYSIF STATE INS FUND',
+        policyNumber: 'BC123456789',
+        groupNumber: 'GRP001',
+      },
+      diagnosis: 'Radiculopathy, lumbar region',
+      diagnosisCode: 'M54.16',
+      patientType: 'workers-comp',
+      arrivalRate: 100.0,
     },
-  ],
-  insurance: {
-    id: '1',
-    name: 'NYSIF STATE INS FUND',
-    policyNumber: 'BC123456789',
-    groupNumber: 'GRP001',
-  },
-  diagnosis: 'Radiculopathy, lumbar region',
-  diagnosisCode: 'M54.16',
-  patientType: 'workers-comp',
-  arrivalRate: 100.0,
+    '2': {
+      id: '2',
+      name: 'MIGUEL A PEREZ',
+      dob: new Date('1975-08-22'),
+      gender: 'Male',
+      phone: '(555) 234-5678',
+      email: 'miguel.perez@example.com',
+      address: {
+        street: '456 Oak Avenue',
+        city: 'New York',
+        state: 'NY',
+        zip: '10002',
+      },
+      cases: [
+        {
+          id: '2',
+          name: '[WC] 11/20/2025: CERVICAL',
+          createdDate: new Date('2025-11-20'),
+          visitsRemaining: 3,
+          expirationDate: new Date('2026-05-20'),
+          authorizationStatus: 'active',
+        },
+      ],
+      insurance: {
+        id: '2',
+        name: 'NYSIF STATE INS FUND',
+        policyNumber: 'BC234567890',
+        groupNumber: 'GRP002',
+      },
+      diagnosis: 'Cervical strain',
+      diagnosisCode: 'M54.2',
+      patientType: 'workers-comp',
+      arrivalRate: 95.0,
+    },
+    '3': {
+      id: '3',
+      name: 'SANCHEZ, REBECCA',
+      dob: new Date('1990-03-10'),
+      gender: 'Female',
+      phone: '(555) 345-6789',
+      email: 'rebecca.sanchez@example.com',
+      address: {
+        street: '789 Elm Street',
+        city: 'New York',
+        state: 'NY',
+        zip: '10003',
+      },
+      cases: [
+        {
+          id: '3',
+          name: '[WC] 10/15/2025: SHOULDER',
+          createdDate: new Date('2025-10-15'),
+          visitsRemaining: 8,
+          expirationDate: new Date('2026-04-15'),
+          authorizationStatus: 'active',
+        },
+      ],
+      insurance: {
+        id: '3',
+        name: 'NYSIF STATE INS FUND',
+        policyNumber: 'BC345678901',
+        groupNumber: 'GRP003',
+      },
+      diagnosis: 'Rotator cuff tear',
+      diagnosisCode: 'M75.1',
+      patientType: 'workers-comp',
+      arrivalRate: 98.0,
+    },
+    '4': {
+      id: '4',
+      name: 'MEJIA, SEGUNDO',
+      dob: new Date('1985-11-05'),
+      gender: 'Male',
+      phone: '(555) 456-7890',
+      email: 'segundo.mejia@example.com',
+      address: {
+        street: '321 Pine Street',
+        city: 'New York',
+        state: 'NY',
+        zip: '10004',
+      },
+      cases: [
+        {
+          id: '4',
+          name: '[WC] 09/30/2025: KNEE',
+          createdDate: new Date('2025-09-30'),
+          visitsRemaining: 10,
+          expirationDate: new Date('2026-03-30'),
+          authorizationStatus: 'active',
+        },
+      ],
+      insurance: {
+        id: '4',
+        name: 'NYSIF STATE INS FUND',
+        policyNumber: 'BC456789012',
+        groupNumber: 'GRP004',
+      },
+      diagnosis: 'Knee osteoarthritis',
+      diagnosisCode: 'M17.11',
+      patientType: 'workers-comp',
+      arrivalRate: 92.0,
+    },
+    '5': {
+      id: '5',
+      name: 'JOHN DOE',
+      dob: new Date('1980-05-15'),
+      gender: 'Male',
+      phone: '(555) 567-8901',
+      email: 'john.doe@example.com',
+      address: {
+        street: '654 Maple Avenue',
+        city: 'New York',
+        state: 'NY',
+        zip: '10005',
+      },
+      cases: [
+        {
+          id: '5',
+          name: '[WC] 08/15/2025: LUMBAR',
+          createdDate: new Date('2025-08-15'),
+          visitsRemaining: 5,
+          expirationDate: new Date('2026-02-15'),
+          authorizationStatus: 'active',
+        },
+      ],
+      insurance: {
+        id: '5',
+        name: 'NYSIF STATE INS FUND',
+        policyNumber: 'BC567890123',
+        groupNumber: 'GRP005',
+      },
+      diagnosis: 'Lower back pain',
+      diagnosisCode: 'M54.5',
+      patientType: 'workers-comp',
+      arrivalRate: 90.0,
+    },
+    '6': {
+      id: '6',
+      name: 'JANE SMITH',
+      dob: new Date('1975-08-22'),
+      gender: 'Female',
+      phone: '(555) 678-9012',
+      email: 'jane.smith@example.com',
+      address: {
+        street: '987 Cedar Street',
+        city: 'New York',
+        state: 'NY',
+        zip: '10006',
+      },
+      cases: [
+        {
+          id: '6',
+          name: '[WC] 07/20/2025: SHOULDER',
+          createdDate: new Date('2025-07-20'),
+          visitsRemaining: 12,
+          expirationDate: new Date('2026-01-20'),
+          authorizationStatus: 'active',
+        },
+      ],
+      insurance: {
+        id: '6',
+        name: 'NYSIF STATE INS FUND',
+        policyNumber: 'BC678901234',
+        groupNumber: 'GRP006',
+      },
+      diagnosis: 'Shoulder impingement',
+      diagnosisCode: 'M75.4',
+      patientType: 'workers-comp',
+      arrivalRate: 97.0,
+    },
+  };
+  
+  return patients[patientId] || patients['1']; // Default to first patient if not found
 };
 
 interface Treatment {
@@ -79,12 +261,18 @@ interface Treatment {
   settings?: string;
   totalMinutes: number;
   isHEP: boolean;
+  justification?: string;
 }
 
 export default function NewDocumentTypePage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const documentType = decodeURIComponent(params.type as string) as DocumentType;
+  
+  // Get patient ID from query params
+  const patientId = searchParams.get('patient') || '1';
+  const mockPatient = getMockPatient(patientId);
   
   // Format document type for display (remove "PT " prefix if present)
   const displayType = documentType.replace(/^PT\s+/, '');
@@ -94,6 +282,11 @@ export default function NewDocumentTypePage() {
   const normalizedType = documentType.trim();
   const isDailyNote = normalizedType === 'PT Daily Note';
   const isInitialEvaluation = normalizedType === 'PT Initial Evaluation' || normalizedType.includes('Initial Evaluation');
+  
+  // Determine if billing should be shown
+  const showBilling = normalizedType === 'PT Daily Note' || 
+                      normalizedType === 'PT Initial Evaluation' || 
+                      normalizedType === 'PT Progress with Billing';
 
   const [entryDate, setEntryDate] = useState(new Date());
   const [timeIn, setTimeIn] = useState<string>('');
@@ -120,6 +313,12 @@ export default function NewDocumentTypePage() {
       typeOfInjury: 'chronic',
       specificInjury: 'strain',
       occupation: 'Construction worker',
+      // Goals
+      goals: [
+        { id: 'g1', text: 'Improve lumbar ROM to within functional limits', type: 'short-term' as const },
+        { id: 'g2', text: 'Reduce pain to 2/10 or less', type: 'short-term' as const },
+        { id: 'g3', text: 'Return to work without restrictions', type: 'long-term' as const },
+      ],
       // Assessment fields
       assessmentEntries: [
         { id: 'a1', text: 'Patient showing good progress with physical therapy intervention. Pain management effective.' },
@@ -143,6 +342,13 @@ export default function NewDocumentTypePage() {
       surgeryDate: '2022-01-15',
       surgeryType: 'Lumbar fusion',
       occupation: 'Construction worker',
+      // Goals
+      goals: [
+        { id: 'g1', text: 'Reduce pain from 7/10 to 3/10 within 4 weeks', type: 'short-term' as const },
+        { id: 'g2', text: 'Improve functional mobility for ADLs', type: 'short-term' as const },
+        { id: 'g3', text: 'Return to full work duties', type: 'long-term' as const },
+        { id: 'g4', text: 'Prevent chronicity of condition', type: 'long-term' as const },
+      ],
       // Assessment fields
       assessmentEntries: [
         { id: 'a1', text: 'Lumbar radiculopathy, likely L5-S1. Patient requires physical therapy intervention to address pain, improve function, and prevent chronicity.' },
@@ -182,7 +388,10 @@ export default function NewDocumentTypePage() {
   const [treatmentPlan, setTreatmentPlan] = useState('');
   const [frequency, setFrequency] = useState('');
   const [duration, setDuration] = useState('');
+  const [recommendPT, setRecommendPT] = useState(false);
+  const [otherRecommendations, setOtherRecommendations] = useState<Array<{ id: string; text: string; frequency?: string; duration?: string }>>([]);
   const [treatments, setTreatments] = useState<Treatment[]>([]);
+  const [billingCharges, setBillingCharges] = useState<Array<{ code: string; description: string; units: number; time: number }>>([]);
   const [isPhrasesOpen, setIsPhrasesOpen] = useState(false);
   const [activeTextAreaId, setActiveTextAreaId] = useState<string | null>(null);
 
@@ -285,16 +494,29 @@ export default function NewDocumentTypePage() {
   };
 
   const handleSave = () => {
+    // Calculate billing totals
+    const totalUnits = billingCharges.reduce((sum, charge) => sum + charge.units, 0);
+    const totalTime = billingCharges.reduce((sum, charge) => sum + charge.time, 0);
+
     // Save document logic
-    console.log('Saving document...', {
+    const documentData = {
       documentType,
       entryDate,
       timeIn,
       timeOut,
       vitals,
       chiefComplaint,
+      // Billing data
+      billing: billingCharges.length > 0 ? {
+        codes: billingCharges,
+        totalUnits,
+        totalTime,
+      } : undefined,
       // ... other fields
-    });
+    };
+    
+    console.log('Saving document...', documentData);
+    // TODO: Implement actual save API call
     // Navigate back or show success message
   };
 
@@ -364,12 +586,30 @@ export default function NewDocumentTypePage() {
                 onFunctionalTestingChange={setFunctionalTesting}
                 onCurrentFunctionalLimitationsChange={setCurrentFunctionalLimitations}
                 onObjectiveTreatmentsChange={setObjectiveTreatments}
+                // Structured table entries
+                aromEntries={aromEntries}
+                promEntries={promEntries}
+                girthEntries={girthEntries}
+                muscleTestingEntries={muscleTestingEntries}
+                specialTestEntries={specialTestEntries}
+                myotomeEntries={myotomeEntries}
+                dermatomeEntries={dermatomeEntries}
+                reflexEntries={reflexEntries}
+                onAROMEntriesChange={setAROMEntries}
+                onPROMEntriesChange={setPROMEntries}
+                onGirthEntriesChange={setGirthEntries}
+                onMuscleTestingEntriesChange={setMuscleTestingEntries}
+                onSpecialTestEntriesChange={setSpecialTestEntries}
+                onMyotomeEntriesChange={setMyotomeEntries}
+                onDermatomeEntriesChange={setDermatomeEntries}
+                onReflexEntriesChange={setReflexEntries}
               />
 
               <GoalsSection
                 goals={goals}
                 onGoalsChange={setGoals}
                 isVisible={true}
+                previousDocuments={previousDocuments}
               />
 
               <AssessmentSection
@@ -394,6 +634,8 @@ export default function NewDocumentTypePage() {
             treatmentPlan={treatmentPlan}
             frequency={frequency}
             duration={duration}
+            recommendPT={recommendPT}
+            otherRecommendations={otherRecommendations}
             goals={goals}
             assessmentEntries={assessmentEntries}
             objectiveTreatments={objectiveTreatments}
@@ -402,7 +644,22 @@ export default function NewDocumentTypePage() {
             onTreatmentPlanChange={setTreatmentPlan}
             onFrequencyChange={setFrequency}
             onDurationChange={setDuration}
+            onRecommendPTChange={setRecommendPT}
+            onOtherRecommendationsChange={setOtherRecommendations}
           />
+
+              {showBilling && (
+                <BillingSection
+                  objectiveTreatments={objectiveTreatments}
+                  renderingProvider={mockPatient.name} // TODO: Get actual provider from document/case
+                  primaryDiagnosis={mockPatient.diagnosis || 'N/A'}
+                  placeOfService="11"
+                  typeOfService="01"
+                  timeIn={timeIn}
+                  timeOut={timeOut}
+                  onChargesChange={setBillingCharges}
+                />
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -463,6 +720,7 @@ export default function NewDocumentTypePage() {
                 { id: 'assessment', label: 'Assessment', completed: assessmentEntries.length > 0 },
                 { id: 'plan', label: 'Plan', completed: !!treatmentPlan },
               ]}
+              billingCompleted={billingCharges.length > 0}
               onSectionClick={(sectionId) => {
                 setActiveSection(sectionId);
               }}
@@ -474,13 +732,6 @@ export default function NewDocumentTypePage() {
             {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-7xl mx-auto px-6 py-6">
-                <Breadcrumbs items={[
-                  { label: 'Dashboard', href: '/' },
-                  { label: 'Patients', href: '/patients' },
-                  { label: mockPatient.name, href: `/patients/${mockPatient.id}` },
-                  { label: displayType }
-                ]} />
-
                 <DocumentEditorHeader
                   patient={mockPatient}
                   activeCase={activeCase}
@@ -492,6 +743,7 @@ export default function NewDocumentTypePage() {
                   onTimeOutChange={setTimeOut}
                   vitals={vitals}
                   onVitalsChange={setVitals}
+                  stickyTop="top-0"
                 />
 
                 <div className="mt-6">
@@ -653,6 +905,7 @@ export default function NewDocumentTypePage() {
                       goals={goals}
                       onGoalsChange={setGoals}
                       isVisible={true}
+                      previousDocuments={previousDocuments}
                     />
                   )}
 
@@ -681,6 +934,8 @@ export default function NewDocumentTypePage() {
                       treatmentPlan={treatmentPlan}
                       frequency={frequency}
                       duration={duration}
+                      recommendPT={recommendPT}
+                      otherRecommendations={otherRecommendations}
                       goals={goals}
                       assessmentEntries={assessmentEntries}
                       objectiveTreatments={objectiveTreatments}
@@ -689,6 +944,8 @@ export default function NewDocumentTypePage() {
                       onTreatmentPlanChange={setTreatmentPlan}
                       onFrequencyChange={setFrequency}
                       onDurationChange={setDuration}
+                      onRecommendPTChange={setRecommendPT}
+                      onOtherRecommendationsChange={setOtherRecommendations}
                     />
                   )}
 
@@ -727,6 +984,19 @@ export default function NewDocumentTypePage() {
                       onMyotomeEntriesChange={setMyotomeEntries}
                       onDermatomeEntriesChange={setDermatomeEntries}
                       onReflexEntriesChange={setReflexEntries}
+                    />
+                  )}
+
+                  {activeSection === 'billing' && showBilling && (
+                    <BillingSection
+                      objectiveTreatments={objectiveTreatments}
+                      renderingProvider={mockPatient.name} // TODO: Get actual provider from document/case
+                      primaryDiagnosis={mockPatient.diagnosis || 'N/A'}
+                      placeOfService="11"
+                      typeOfService="01"
+                      timeIn={timeIn}
+                      timeOut={timeOut}
+                      onChargesChange={setBillingCharges}
                     />
                   )}
 

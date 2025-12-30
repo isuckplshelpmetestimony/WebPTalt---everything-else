@@ -16,7 +16,7 @@ interface BreadcrumbsProps {
 
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
   return (
-    <nav className="flex items-center gap-1.5 text-body-sm text-gray-600 mb-4">
+    <nav className="sticky top-[43px] z-40 flex items-center gap-1.5 text-body-sm text-gray-600 mb-4 py-3 -mx-6 px-6 bg-cairos-bg border-b border-cairos-border backdrop-blur-sm">
       <Link 
         href="/"
         className="flex items-center gap-1 hover:text-gray-900 transition-colors"

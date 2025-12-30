@@ -22,6 +22,7 @@ interface DocumentEditorHeaderProps {
     oxygenSaturation?: number;
   };
   onVitalsChange?: (vitals: { bloodPressure?: string; heartRate?: number; oxygenSaturation?: number }) => void;
+  stickyTop?: string; // Optional prop to control sticky top position
 }
 
 export const DocumentEditorHeader: React.FC<DocumentEditorHeaderProps> = ({
@@ -35,6 +36,7 @@ export const DocumentEditorHeader: React.FC<DocumentEditorHeaderProps> = ({
   onTimeOutChange,
   vitals,
   onVitalsChange,
+  stickyTop = 'top-[93px]', // Default to 93px: nav tabs (43px) + breadcrumbs (~50px)
 }) => {
   const calculateDuration = () => {
     if (!timeIn || !timeOut) return null;
@@ -58,7 +60,7 @@ export const DocumentEditorHeader: React.FC<DocumentEditorHeaderProps> = ({
   const duration = calculateDuration();
 
   return (
-    <Card className="p-4 mb-6 sticky top-0 z-10 bg-white shadow-sm">
+    <Card className={`p-4 mb-6 sticky ${stickyTop} z-30 bg-white shadow-sm backdrop-blur-sm`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Patient & Case Info */}
         <div className="lg:col-span-2">

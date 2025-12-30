@@ -143,3 +143,5 @@ The discussion covers the complexities of billing and coding for physical therap
 
 Very productive 2-hour session. Next meeting will focus on reviewing the actual demo (not wireframes) with final UI, colors, and layout. Sean will update via group chat when demo is ready.
 
+
+

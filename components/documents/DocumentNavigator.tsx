@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Patient, Case } from '@/lib/types/patient';
 import { formatDate } from '@/lib/utils/date';
 
@@ -24,6 +24,7 @@ interface DocumentNavigatorProps {
     completed?: boolean;
     subsections?: { id: string; label: string; completed?: boolean }[];
   }[];
+  billingCompleted?: boolean;
   onSectionClick?: (sectionId: string) => void;
   onVitalsChange?: (vitals: { bloodPressure?: string; heartRate?: number; oxygenSaturation?: number }) => void;
   onTimeInChange?: (time: string) => void;
@@ -39,6 +40,7 @@ export const DocumentNavigator: React.FC<DocumentNavigatorProps> = ({
   vitals,
   subjectiveSections,
   objectiveSections,
+  billingCompleted = false,
   onSectionClick,
   onVitalsChange,
   onTimeInChange,
@@ -47,6 +49,7 @@ export const DocumentNavigator: React.FC<DocumentNavigatorProps> = ({
   const [vitalsExpanded, setVitalsExpanded] = useState(false);
   const [subjectiveExpanded, setSubjectiveExpanded] = useState(true);
   const [objectiveExpanded, setObjectiveExpanded] = useState(true);
+  const [billingExpanded, setBillingExpanded] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const toggleSection = (sectionId: string) => {
@@ -326,6 +329,45 @@ export const DocumentNavigator: React.FC<DocumentNavigatorProps> = ({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Billing Section */}
+        <div>
+          <button
+            onClick={() => {
+              setBillingExpanded(!billingExpanded);
+              handleSectionClick('billing');
+            }}
+            className="flex items-center justify-between w-full text-body-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-2 py-1.5 rounded-md transition-colors mb-2"
+          >
+            <span>Billing</span>
+            {billingExpanded ? (
+              <ChevronDown className="w-5 h-5 text-gray-500" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            )}
+          </button>
+          {billingExpanded && (
+            <div className="space-y-1">
+              <button
+                onClick={() => handleSectionClick('billing')}
+                className={`flex items-center gap-2 w-full text-left px-2 py-1.5 rounded text-body-xs hover:bg-gray-50 transition-colors ${
+                  billingCompleted ? 'text-gray-900' : 'text-gray-600'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!billingCompleted}
+                  readOnly
+                  className="w-3 h-3 rounded border-cairos-border text-cairos-primary focus:ring-cairos-primary"
+                />
+                <span className="flex-1">Charges</span>
+                {billingCompleted && (
+                  <CheckCircle2 className="w-3 h-3 text-green-600" />
+                )}
+              </button>
             </div>
           )}
         </div>
