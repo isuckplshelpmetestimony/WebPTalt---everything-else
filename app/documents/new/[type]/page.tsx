@@ -39,7 +39,9 @@ import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { Button } from '@/components/ui/Button';
 import { DocumentType } from '@/lib/types/document';
 import { Patient, Case } from '@/lib/types/patient';
-import { FileText, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, MessageSquare, ChevronLeft, ChevronRight, Mic, Keyboard } from 'lucide-react';
+import { subjectivePrompts } from '@/lib/prompts/subjectivePrompts';
+import { MicModePrompts } from '@/components/documents/MicModePrompts';
 
 // Mock patient data - replace with actual API calls
 const getMockPatient = (patientId: string): Patient => {
@@ -272,7 +274,63 @@ export default function NewDocumentTypePage() {
   
   // Get patient ID from query params
   const patientId = searchParams.get('patient') || '1';
-  const mockPatient = getMockPatient(patientId);
+  
+  // Check if this is a new patient (has name param) and create patient object
+  const patientName = searchParams.get('name');
+  let mockPatient: Patient;
+  
+  // Check if patient exists in mock data (IDs 1-6)
+  const knownPatientIds = ['1', '2', '3', '4', '5', '6'];
+  const isKnownPatient = knownPatientIds.includes(patientId);
+  
+  const allParams = Object.fromEntries(searchParams.entries());
+  console.log('Patient check:', { 
+    patientId, 
+    patientName, 
+    isKnownPatient, 
+    patientIdType: typeof patientId,
+    patientIdStartsWith: patientId?.startsWith('patient-'),
+    allParams 
+  });
+  
+  // If we have a name param and it's not a known patient ID, create new patient
+  if (patientName && !isKnownPatient) {
+    // Create new patient from URL params
+    const patientDob = searchParams.get('dob');
+    const patientGender = searchParams.get('gender') || 'Male';
+    const patientPhone = searchParams.get('phone') || '';
+    const patientEmail = searchParams.get('email') || '';
+    
+    mockPatient = {
+      id: patientId,
+      name: patientName,
+      dob: patientDob ? new Date(patientDob) : new Date(),
+      gender: patientGender as 'Male' | 'Female' | 'Other',
+      phone: patientPhone,
+      email: patientEmail,
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zip: '',
+      },
+      cases: [],
+      insurance: {
+        id: '',
+        name: '',
+        policyNumber: '',
+        groupNumber: '',
+      },
+      diagnosis: '',
+      diagnosisCode: '',
+      patientType: '',
+      arrivalRate: 0,
+    };
+    console.log('Created new patient from URL params:', mockPatient);
+  } else {
+    mockPatient = getMockPatient(patientId);
+    console.log('Using mock patient:', mockPatient);
+  }
   
   // Format document type for display (remove "PT " prefix if present)
   const displayType = documentType.replace(/^PT\s+/, '');
@@ -394,6 +452,12 @@ export default function NewDocumentTypePage() {
   const [billingCharges, setBillingCharges] = useState<Array<{ code: string; description: string; units: number; time: number }>>([]);
   const [isPhrasesOpen, setIsPhrasesOpen] = useState(false);
   const [activeTextAreaId, setActiveTextAreaId] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<'manual' | 'mic'>('manual'); // Input mode: manual or mic
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const recordingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // PT Initial Evaluation specific state
   const [depressionScreening, setDepressionScreening] = useState<DepressionScreeningData>({});
@@ -430,7 +494,66 @@ export default function NewDocumentTypePage() {
     }
   }, []);
 
-  const activeCase = mockPatient.cases[0];
+  // Cleanup recording interval on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      // Start timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Failed to start recording. Please check your microphone permissions.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+    }
+  };
+
+  const formatRecordingTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const activeCase = mockPatient.cases?.[0];
 
   const handleInsertPhrase = (phrase: string) => {
     if (activeTextAreaId) {
@@ -722,7 +845,20 @@ export default function NewDocumentTypePage() {
               ]}
               billingCompleted={billingCharges.length > 0}
               onSectionClick={(sectionId) => {
-                setActiveSection(sectionId);
+                // If clicking any subjective section, show all subjective sections and scroll to the clicked one
+                const subjectiveSections = ['current-condition', 'depression', 'social-drivers', 'elder-maltreatment', 'falls', 'bmi', 'urinary-incontinence', 'dementia', 'diabetes', 'pain-history', 'functional-status', 'medical-history'];
+                if (subjectiveSections.includes(sectionId)) {
+                  setActiveSection('current-condition'); // Use this as the trigger to show all sections
+                  // Scroll to the clicked section after a brief delay to allow render
+                  setTimeout(() => {
+                    const element = document.getElementById(`section-${sectionId}`);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 100);
+                } else {
+                  setActiveSection(sectionId);
+                }
               }}
               onVitalsChange={setVitals}
               onTimeInChange={setTimeIn}
@@ -747,119 +883,255 @@ export default function NewDocumentTypePage() {
                 />
 
                 <div className="mt-6">
-                  {activeSection === 'current-condition' && (
-                    <SubjectiveSection
-                      chiefComplaint={chiefComplaint}
-                      onsetDate={onsetDate}
-                      typeOfInjury={typeOfInjury}
-                      specificInjury={specificInjury}
-                      surgeryDate={surgeryDate}
-                      surgeryType={surgeryType}
-                      occupation={occupation}
-                      treatmentsRelated={treatmentsRelated}
-                      previousDocuments={previousDocuments}
-                      documentType={isInitialEvaluation ? 'PT Initial Evaluation' : isDailyNote ? 'PT Daily Note' : undefined}
-                      onChiefComplaintChange={setChiefComplaint}
-                      onOnsetDateChange={setOnsetDate}
-                      onTypeOfInjuryChange={setTypeOfInjury}
-                      onSpecificInjuryChange={setSpecificInjury}
-                      onSurgeryDateChange={setSurgeryDate}
-                      onSurgeryTypeChange={setSurgeryType}
-                      onOccupationChange={setOccupation}
-                      onTreatmentsRelatedChange={setTreatmentsRelated}
-                      onCreateGoal={handleCreateGoal}
-                    />
+                  {/* Mode Selector Toggle - Only show for subjective sections */}
+                  {(activeSection === 'current-condition' || activeSection === 'depression' || activeSection === 'social-drivers' || activeSection === 'elder-maltreatment' || activeSection === 'falls' || activeSection === 'bmi' || activeSection === 'urinary-incontinence' || activeSection === 'dementia' || activeSection === 'diabetes' || activeSection === 'pain-history' || activeSection === 'functional-status' || activeSection === 'medical-history') && (
+                    <div className="mb-6 space-y-4">
+                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-cairos-border">
+                        <span className="text-body-sm font-medium text-gray-700">Input Mode:</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isRecording) {
+                                stopRecording();
+                              }
+                              setInputMode('manual');
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                              inputMode === 'manual'
+                                ? 'bg-cairos-primary text-white'
+                                : 'bg-white text-gray-700 border border-cairos-border hover:bg-gray-50'
+                            }`}
+                          >
+                            <Keyboard className="w-4 h-4" />
+                            <span className="text-body-sm font-medium">Manual Mode</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInputMode('mic')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                              inputMode === 'mic'
+                                ? 'bg-cairos-primary text-white'
+                                : 'bg-white text-gray-700 border border-cairos-border hover:bg-gray-50'
+                            }`}
+                          >
+                            <Mic className="w-4 h-4" />
+                            <span className="text-body-sm font-medium">Mic Mode</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Recording Controls - Only show in Mic Mode */}
+                      {inputMode === 'mic' && (
+                        <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-center gap-3 flex-1">
+                            {isRecording ? (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                                  <span className="text-body-sm font-medium text-red-900">Recording</span>
+                                </div>
+                                <span className="text-body-sm font-mono text-red-700">
+                                  {formatRecordingTime(recordingTime)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-body-sm text-gray-700">Ready to record</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={isRecording ? stopRecording : startRecording}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
+                              isRecording
+                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                : 'bg-cairos-primary text-white hover:bg-opacity-90'
+                            }`}
+                          >
+                            {isRecording ? (
+                              <>
+                                <div className="w-4 h-4 bg-white rounded-sm"></div>
+                                <span className="text-body-sm">Stop Recording</span>
+                              </>
+                            ) : (
+                              <>
+                                <Mic className="w-4 h-4" />
+                                <span className="text-body-sm">Start Recording</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
 
-                  {activeSection === 'depression' && (
-                    <DepressionScreening
-                      data={depressionScreening}
-                      onChange={setDepressionScreening}
-                    />
-                  )}
+                  {/* Show all subjective sections when any subjective section is active */}
+                  {(activeSection === 'current-condition' || activeSection === 'depression' || activeSection === 'social-drivers' || activeSection === 'elder-maltreatment' || activeSection === 'falls' || activeSection === 'bmi' || activeSection === 'urinary-incontinence' || activeSection === 'dementia' || activeSection === 'diabetes' || activeSection === 'pain-history' || activeSection === 'functional-status' || activeSection === 'medical-history') && (
+                    <div className="space-y-6">
+                      {/* Current Condition Section */}
+                      <div id="section-current-condition">
+                        {inputMode === 'manual' ? (
+                          <SubjectiveSection
+                          chiefComplaint={chiefComplaint}
+                          onsetDate={onsetDate}
+                          typeOfInjury={typeOfInjury}
+                          specificInjury={specificInjury}
+                          surgeryDate={surgeryDate}
+                          surgeryType={surgeryType}
+                          occupation={occupation}
+                          treatmentsRelated={treatmentsRelated}
+                          previousDocuments={previousDocuments}
+                          documentType={isInitialEvaluation ? 'PT Initial Evaluation' : isDailyNote ? 'PT Daily Note' : undefined}
+                          onChiefComplaintChange={setChiefComplaint}
+                          onOnsetDateChange={setOnsetDate}
+                          onTypeOfInjuryChange={setTypeOfInjury}
+                          onSpecificInjuryChange={setSpecificInjury}
+                          onSurgeryDateChange={setSurgeryDate}
+                          onSurgeryTypeChange={setSurgeryType}
+                          onOccupationChange={setOccupation}
+                          onTreatmentsRelatedChange={setTreatmentsRelated}
+                          onCreateGoal={handleCreateGoal}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'current-condition')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'social-drivers' && (
-                    <SocialDriversScreening
-                      data={socialDriversScreening}
-                      onChange={setSocialDriversScreening}
-                    />
-                  )}
+                      <div id="section-depression">
+                        {inputMode === 'manual' ? (
+                          <DepressionScreening
+                          data={depressionScreening}
+                          onChange={setDepressionScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'depression')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'elder-maltreatment' && (
-                    <ElderMaltreatmentScreening
-                      data={elderMaltreatmentScreening}
-                      onChange={setElderMaltreatmentScreening}
-                    />
-                  )}
+                      <div id="section-social-drivers">
+                        {inputMode === 'manual' ? (
+                          <SocialDriversScreening
+                          data={socialDriversScreening}
+                          onChange={setSocialDriversScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'social-drivers')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'falls' && (
-                    <FallsScreening
-                      data={fallsScreening}
-                      onChange={setFallsScreening}
-                    />
-                  )}
+                      <div id="section-elder-maltreatment">
+                        {inputMode === 'manual' ? (
+                          <ElderMaltreatmentScreening
+                          data={elderMaltreatmentScreening}
+                          onChange={setElderMaltreatmentScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'elder-maltreatment')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'bmi' && (
-                    <BMIScreening
-                      data={bmiScreening}
-                      onChange={setBmiScreening}
-                    />
-                  )}
+                      <div id="section-falls">
+                        {inputMode === 'manual' ? (
+                          <FallsScreening
+                          data={fallsScreening}
+                          onChange={setFallsScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'falls')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'urinary-incontinence' && (
-                    <UrinaryIncontinenceScreening
-                      data={urinaryIncontinenceScreening}
-                      onChange={setUrinaryIncontinenceScreening}
-                    />
-                  )}
+                      <div id="section-bmi">
+                        {inputMode === 'manual' ? (
+                          <BMIScreening
+                          data={bmiScreening}
+                          onChange={setBmiScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'bmi')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'dementia' && (
-                    <DementiaScreening
-                      data={dementiaScreening}
-                      onChange={setDementiaScreening}
-                    />
-                  )}
+                      <div id="section-urinary-incontinence">
+                        {inputMode === 'manual' ? (
+                          <UrinaryIncontinenceScreening
+                          data={urinaryIncontinenceScreening}
+                          onChange={setUrinaryIncontinenceScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'urinary-incontinence')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'diabetes' && (
-                    <DiabetesScreening
-                      data={diabetesScreening}
-                      onChange={setDiabetesScreening}
-                    />
-                  )}
+                      <div id="section-dementia">
+                        {inputMode === 'manual' ? (
+                          <DementiaScreening
+                          data={dementiaScreening}
+                          onChange={setDementiaScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'dementia')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'pain-history' && (
-                    <PainHistorySection
-                      painAreas={painAreas}
-                      painDescriptions={painDescriptions}
-                      comments={painHistoryComments}
-                      onPainAreasChange={setPainAreas}
-                      onPainDescriptionsChange={setPainDescriptions}
-                      onCommentsChange={setPainHistoryComments}
-                    />
-                  )}
+                      <div id="section-diabetes">
+                        {inputMode === 'manual' ? (
+                          <DiabetesScreening
+                          data={diabetesScreening}
+                          onChange={setDiabetesScreening}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'diabetes')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'functional-status' && (
-                    <FunctionalStatusSection
-                      activities={functionalActivities}
-                      restrictions={functionalRestrictions}
-                      lastDateWorked={lastDateWorked}
-                      comments={functionalComments}
-                      onActivitiesChange={setFunctionalActivities}
-                      onRestrictionsChange={setFunctionalRestrictions}
-                      onLastDateWorkedChange={setLastDateWorked}
-                      onCommentsChange={setFunctionalComments}
-                    />
-                  )}
+                      <div id="section-pain-history">
+                        {inputMode === 'manual' ? (
+                          <PainHistorySection
+                          painAreas={painAreas}
+                          painDescriptions={painDescriptions}
+                          comments={painHistoryComments}
+                          onPainAreasChange={setPainAreas}
+                          onPainDescriptionsChange={setPainDescriptions}
+                          onCommentsChange={setPainHistoryComments}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'pain-history')!} />
+                        )}
+                      </div>
 
-                  {activeSection === 'medical-history' && (
-                    <MedicalHistorySection
-                      surgeryHistory={surgeryHistory}
-                      medicalConditions={medicalConditions}
-                      medications={medications}
-                      onSurgeryHistoryChange={setSurgeryHistory}
-                      onMedicalConditionsChange={setMedicalConditions}
-                      onMedicationsChange={setMedications}
-                    />
+                      <div id="section-functional-status">
+                        {inputMode === 'manual' ? (
+                          <FunctionalStatusSection
+                          activities={functionalActivities}
+                          restrictions={functionalRestrictions}
+                          lastDateWorked={lastDateWorked}
+                          comments={functionalComments}
+                          onActivitiesChange={setFunctionalActivities}
+                          onRestrictionsChange={setFunctionalRestrictions}
+                          onLastDateWorkedChange={setLastDateWorked}
+                          onCommentsChange={setFunctionalComments}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'functional-status')!} />
+                        )}
+                      </div>
+
+                      <div id="section-medical-history">
+                        {inputMode === 'manual' ? (
+                          <MedicalHistorySection
+                          surgeryHistory={surgeryHistory}
+                          medicalConditions={medicalConditions}
+                          medications={medications}
+                          onSurgeryHistoryChange={setSurgeryHistory}
+                          onMedicalConditionsChange={setMedicalConditions}
+                          onMedicationsChange={setMedications}
+                        />
+                        ) : (
+                          <MicModePrompts sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'medical-history')!} />
+                        )}
+                      </div>
+                    </div>
                   )}
 
                   {activeSection === 'objective' && (

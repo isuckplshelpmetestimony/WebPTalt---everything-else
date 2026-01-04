@@ -7,7 +7,7 @@ import { formatDate } from '@/lib/utils/date';
 
 interface DocumentNavigatorProps {
   patient: Patient;
-  activeCase: Case;
+  activeCase?: Case;
   entryDate: Date;
   timeIn: string;
   timeOut: string;
@@ -125,7 +125,7 @@ export const DocumentNavigator: React.FC<DocumentNavigatorProps> = ({
           <div className="text-body-sm font-semibold text-gray-700 mb-2">Options</div>
           <div className="space-y-2 text-body-xs text-gray-600">
             <div>
-              <span className="font-medium">Case Name:</span> {activeCase.name}
+              <span className="font-medium">Case Name:</span> {activeCase?.name || 'No case assigned'}
             </div>
             <div>
               <span className="font-medium">Date of Service:</span> {formatDate(entryDate)}

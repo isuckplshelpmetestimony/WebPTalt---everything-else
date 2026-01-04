@@ -59,6 +59,7 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted', { patientMode, newPatientName, appointmentDate });
 
     // Validation
     if (patientMode === 'existing' && !selectedPatientId) {
@@ -67,24 +68,34 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
     }
 
     if (patientMode === 'new') {
-      if (!newPatientName.trim() || !newPatientDob || !newPatientPhone.trim()) {
-        alert('Please fill in all required patient fields');
+      if (!newPatientName.trim()) {
+        alert('Please enter the patient name');
         return;
       }
     }
 
-    if (!providerId) {
-      alert('Please select a provider');
-      return;
-    }
+    const selectedProvider = providerId ? providers.find(p => p.id === providerId) : null;
 
-    const selectedProvider = providers.find(p => p.id === providerId);
-    if (!selectedProvider) return;
-
-    // Create appointment date/time
-    const [year, month, day] = appointmentDate.split('-').map(Number);
-    const startTime = new Date(year, month - 1, day, parseInt(startHour), parseInt(startMinute));
-    const endTime = new Date(startTime.getTime() + parseInt(duration) * 60000);
+    // Create appointment date/time - use selectedDate if appointmentDate is not set
+    const dateToUse = appointmentDate || format(selectedDate, 'yyyy-MM-dd');
+    const [year, month, day] = dateToUse.split('-').map(Number);
+    const hourToUse = startHour || '9';
+    const minuteToUse = startMinute || '0';
+    const durationToUse = duration || '60';
+    const startTime = new Date(year, month - 1, day, parseInt(hourToUse), parseInt(minuteToUse));
+    const endTime = new Date(startTime.getTime() + parseInt(durationToUse) * 60000);
+    
+    console.log('Creating appointment', { 
+      startTime: startTime.toString(), 
+      endTime: endTime.toString(), 
+      patientName: newPatientName,
+      startTimeDateString: startTime.toDateString(),
+      startTimeISO: startTime.toISOString(),
+      appointmentDate,
+      selectedDate: selectedDate.toDateString(),
+      dateToUse,
+      year, month, day, hourToUse, minuteToUse
+    });
 
     let patientId: string;
     let patientName: string;
@@ -104,9 +115,9 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
       newPatient = {
         id: newPatientId,
         name: patientName,
-        dob: new Date(newPatientDob),
+        dob: newPatientDob ? new Date(newPatientDob) : new Date(),
         gender: newPatientGender,
-        phone: newPatientPhone.trim(),
+        phone: newPatientPhone.trim() || '',
         email: newPatientEmail.trim() || '',
         address: {
           street: '',
@@ -133,7 +144,7 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
       id: `appt-${Date.now()}`,
       patientId,
       patientName,
-      provider: selectedProvider.name,
+      provider: selectedProvider?.name || 'Unassigned',
       startTime,
       endTime,
       type: appointmentType,
@@ -141,7 +152,15 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
       duration: parseInt(duration),
     };
 
-    onSchedule(appointment, newPatient);
+    console.log('Calling onSchedule', { appointment, newPatient });
+    try {
+      onSchedule(appointment, newPatient);
+      console.log('onSchedule completed successfully');
+    } catch (error) {
+      console.error('Error in onSchedule:', error);
+      alert('Error scheduling appointment: ' + (error instanceof Error ? error.message : String(error)));
+      return;
+    }
     
     // Reset form
     setPatientMode('existing');
@@ -160,6 +179,7 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
     setNewPatientEmail('');
     setNewPatientStationNumber('');
     
+    console.log('Closing modal');
     onClose();
   };
 
@@ -170,7 +190,7 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
       title="Schedule Appointment"
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {/* Patient Mode Selection */}
         <div className="flex gap-4 mb-4">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -227,11 +247,10 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
                 placeholder="Last Name, First Name"
               />
               <Input
-                label="Date of Birth *"
+                label="Date of Birth"
                 type="date"
                 value={newPatientDob}
                 onChange={(e) => setNewPatientDob(e.target.value)}
-                required
               />
               <div>
                 <Select
@@ -246,11 +265,10 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
                 />
               </div>
               <Input
-                label="Phone Number *"
+                label="Phone Number"
                 type="tel"
                 value={newPatientPhone}
                 onChange={(e) => setNewPatientPhone(e.target.value)}
-                required
                 placeholder="(555) 123-4567"
               />
               <Input
@@ -285,7 +303,6 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
                 }))}
                 value={providerId}
                 onChange={(e) => setProviderId(e.target.value)}
-                required
               />
             </div>
             
@@ -294,7 +311,6 @@ export const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> =
               type="date"
               value={appointmentDate}
               onChange={(e) => setAppointmentDate(e.target.value)}
-              required
             />
             
             <div className="flex gap-2">

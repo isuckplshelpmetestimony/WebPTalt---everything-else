@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Users, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -88,6 +89,7 @@ const createInitialAppointments = (date: Date): Appointment[] => {
 };
 
 export default function HomePage() {
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
     mockProviders.map((p) => p.id)
@@ -108,7 +110,26 @@ export default function HomePage() {
   // Get appointments for the current date
   const getAppointmentsForDate = (date: Date): Appointment[] => {
     const dateStr = date.toDateString();
-    return appointments.filter(apt => apt.startTime.toDateString() === dateStr);
+    const filtered = appointments.filter(apt => {
+      const aptDateStr = apt.startTime.toDateString();
+      const matches = aptDateStr === dateStr;
+      if (!matches) {
+        console.log('Date mismatch:', { 
+          appointmentDate: aptDateStr, 
+          currentDate: dateStr,
+          appointment: apt.patientName,
+          startTime: apt.startTime
+        });
+      }
+      return matches;
+    });
+    console.log('getAppointmentsForDate:', { 
+      dateStr, 
+      totalAppointments: appointments.length, 
+      filtered: filtered.length,
+      allAppointmentDates: appointments.map(a => ({ name: a.patientName, date: a.startTime.toDateString(), time: a.startTime.toTimeString() }))
+    });
+    return filtered;
   };
   
   const visibleProviders = mockProviders.filter((p) =>
@@ -116,20 +137,62 @@ export default function HomePage() {
   );
   
   const dateAppointments = getAppointmentsForDate(currentDate);
-  const visibleAppointments = dateAppointments.filter((apt) =>
-    visibleProviders.some((p) => p.name === apt.provider)
-  );
+  console.log('Filtering appointments:', {
+    currentDate: currentDate.toDateString(),
+    dateAppointmentsCount: dateAppointments.length,
+    visibleProviders: visibleProviders.map(p => p.name),
+    allProviders: dateAppointments.map(a => a.provider)
+  });
+  const visibleAppointments = dateAppointments.filter((apt) => {
+    const isVisible = apt.provider === 'Unassigned' || visibleProviders.some((p) => p.name === apt.provider);
+    if (!isVisible) {
+      console.log('Appointment filtered out:', { patient: apt.patientName, provider: apt.provider });
+    }
+    return isVisible;
+  });
+  console.log('Final visibleAppointments:', visibleAppointments.length);
+  
+  // Include "Unassigned" in providers array if there are unassigned appointments
+  const providersForGrid = visibleProviders.map((p) => p.name);
+  const hasUnassigned = visibleAppointments.some(apt => apt.provider === 'Unassigned');
+  if (hasUnassigned && !providersForGrid.includes('Unassigned')) {
+    providersForGrid.push('Unassigned');
+  }
   
   const handleScheduleAppointment = (appointment: Appointment, newPatient?: Patient) => {
+    console.log('handleScheduleAppointment called', { appointment, newPatient });
     // Add new appointment
-    setAppointments(prev => [...prev, appointment]);
+    setAppointments(prev => {
+      const updated = [...prev, appointment];
+      console.log('Updated appointments:', updated);
+      return updated;
+    });
     
     // Add new patient if provided
     if (newPatient) {
-      setPatients(prev => [...prev, { 
-        id: newPatient.id, 
-        name: newPatient.name 
-      }]);
+      setPatients(prev => {
+        const updated = [...prev, { 
+          id: newPatient.id, 
+          name: newPatient.name 
+        }];
+        console.log('Updated patients:', updated);
+        return updated;
+      });
+      
+      // Navigate to initial evaluation page for the new patient
+      // Pass patient data as URL params so the document page can create the patient
+      const patientParams = new URLSearchParams({
+        patient: newPatient.id,
+        name: newPatient.name,
+        dob: newPatient.dob.toISOString(),
+        gender: newPatient.gender,
+        phone: newPatient.phone || '',
+        email: newPatient.email || '',
+      });
+      const url = `/documents/new/${encodeURIComponent('PT Initial Evaluation')}?${patientParams.toString()}`;
+      console.log('Navigating to:', url);
+      console.log('Patient data being passed:', { id: newPatient.id, name: newPatient.name });
+      router.push(url);
     }
   };
   
@@ -232,7 +295,7 @@ export default function HomePage() {
           >
             <ScheduleGrid
               appointments={visibleAppointments}
-              providers={visibleProviders.map((p) => p.name)}
+              providers={providersForGrid}
               currentDate={currentDate}
               slotInterval={slotInterval}
               startHour={8}
