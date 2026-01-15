@@ -321,32 +321,42 @@ export const PlanSection: React.FC<PlanSectionProps> = ({
 
   return (
     <Card className="p-5 mb-4">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between mb-4"
-      >
-        <div className="flex items-center gap-3">
+      <div className="w-full flex items-center justify-between mb-4">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-3 flex-1 text-left"
+        >
           <h3 className="text-h3 text-gray-900">Plan</h3>
           {isComplete && (
             <CheckCircle2 className="w-4 h-4 text-cairos-success" />
           )}
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Voice input"
           >
             <Mic className="w-5 h-5 text-gray-400" />
           </button>
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
-          )}
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="space-y-6 pt-4 border-t border-cairos-border">

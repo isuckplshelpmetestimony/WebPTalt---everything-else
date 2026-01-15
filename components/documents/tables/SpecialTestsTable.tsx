@@ -44,6 +44,8 @@ export const SpecialTestsTable: React.FC<SpecialTestsTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Track which test name input is showing suggestions
+  const [activeTestInput, setActiveTestInput] = useState<string | null>(null);
 
   const filteredTestOptions = testOptions.filter(opt =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -138,11 +140,60 @@ export const SpecialTestsTable: React.FC<SpecialTestsTableProps> = ({
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-cairos-border hover:bg-gray-50">
                   <td className="px-2 py-2">
-                    <Select
-                      options={testOptions}
-                      value={entry.testName}
-                      onChange={(e) => onUpdateEntry(entry.id, { testName: e.target.value })}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={entry.testName || ''}
+                        onChange={(e) => {
+                          onUpdateEntry(entry.id, { testName: e.target.value });
+                          if (e.target.value.length > 0) {
+                            setActiveTestInput(entry.id);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (entry.testName) {
+                            setActiveTestInput(entry.id);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => setActiveTestInput(null), 200);
+                        }}
+                        placeholder="Select test..."
+                        className="w-full px-2 py-1 text-body-xs border border-cairos-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-cairos-primary"
+                      />
+                      {activeTestInput === entry.id && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cairos-border rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                          {testOptions
+                            .filter(opt => {
+                              const searchValue = (entry.testName || '').toLowerCase();
+                              return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                            })
+                            .slice(0, 10)
+                            .map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateEntry(entry.id, { testName: option.label });
+                                  setActiveTestInput(null);
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 text-body-xs"
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          {testOptions.filter(opt => {
+                            const searchValue = (entry.testName || '').toLowerCase();
+                            return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                          }).length === 0 && (
+                            <div className="px-3 py-2 text-body-xs text-gray-500">
+                              Type to see suggestions or enter custom test name
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Select

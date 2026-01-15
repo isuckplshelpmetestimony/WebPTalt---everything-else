@@ -7,11 +7,15 @@ import { Mic } from 'lucide-react';
 
 interface MicModePromptsProps {
   sectionPrompts: SectionPrompts;
+  isActive?: boolean;
 }
 
-export const MicModePrompts: React.FC<MicModePromptsProps> = ({ sectionPrompts }) => {
+export const MicModePrompts: React.FC<MicModePromptsProps> = ({ sectionPrompts, isActive = false }) => {
+  if (!isActive) {
+    return null;
+  }
   return (
-    <Card className="p-5 mb-4">
+    <Card className="p-5 mb-4" style={{ display: 'block', visibility: 'visible', opacity: 1, height: 'auto', minHeight: '100px' }}>
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-cairos-primary bg-opacity-10 rounded-lg">
           <Mic className="w-5 h-5 text-cairos-primary" />
@@ -61,4 +65,6 @@ export const MicModePrompts: React.FC<MicModePromptsProps> = ({ sectionPrompts }
     </Card>
   );
 };
+
+
 

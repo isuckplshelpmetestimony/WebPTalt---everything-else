@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card } from '../ui/Card';
 import { DataTable, TableColumn, TableRow } from './DataTable';
+import { Mic } from 'lucide-react';
 
 export interface SurgeryEntry extends TableRow {
   surgery: string;
@@ -27,6 +28,12 @@ export interface Medication extends TableRow {
 }
 
 interface MedicalHistorySectionProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode;
   surgeryHistory: SurgeryEntry[];
   medicalConditions: MedicalCondition[];
   medications: Medication[];
@@ -119,6 +126,12 @@ const routeOptions = [
 ];
 
 export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   surgeryHistory,
   medicalConditions,
   medications,
@@ -130,9 +143,8 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
     {
       key: 'surgery',
       label: 'Surgery',
-      type: 'select',
-      options: surgeryOptions,
-      searchable: true,
+      type: 'text',
+      placeholder: 'e.g., knee surgery, knee replacement',
     },
     {
       key: 'date',
@@ -142,14 +154,14 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
     {
       key: 'outcome',
       label: 'Outcome',
-      type: 'select',
-      options: outcomeOptions,
+      type: 'text',
+      placeholder: 'e.g., healed, completed, for different issue',
     },
     {
       key: 'status',
       label: 'Status',
-      type: 'select',
-      options: statusOptions,
+      type: 'text',
+      placeholder: 'e.g., discharged, under MD care, active',
     },
   ];
 
@@ -157,33 +169,32 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
     {
       key: 'medicalCondition',
       label: 'Medical Condition',
-      type: 'select',
-      options: medicalConditionOptions,
-      searchable: true,
+      type: 'text',
+      placeholder: 'e.g., high blood pressure, hypertension, diabetes',
     },
     {
       key: 'onset',
       label: 'Onset',
-      type: 'select',
-      options: onsetOptions,
+      type: 'text',
+      placeholder: 'e.g., last 5 years, childhood, 10 years ago',
     },
     {
       key: 'currentStatus',
       label: 'Current Status',
-      type: 'select',
-      options: currentStatusOptions,
+      type: 'text',
+      placeholder: 'e.g., controlled, uncontrolled, under MD care',
     },
     {
       key: 'precaution',
       label: 'Precaution',
-      type: 'select',
-      options: precautionOptions,
+      type: 'text',
+      placeholder: 'e.g., yes, no, or specific precautions',
     },
     {
       key: 'contraindication',
       label: 'Contraindication',
-      type: 'select',
-      options: contraindicationOptions,
+      type: 'text',
+      placeholder: 'e.g., yes, no, cardiac, cancer',
     },
   ];
 
@@ -191,9 +202,8 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
     {
       key: 'medication',
       label: 'Medication',
-      type: 'select',
-      options: medicationOptions,
-      searchable: true,
+      type: 'text',
+      placeholder: 'e.g., Lisinopril, Ibuprofen, muscle relaxers',
     },
     {
       key: 'dosage',
@@ -204,14 +214,14 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
     {
       key: 'frequency',
       label: 'Frequency',
-      type: 'select',
-      options: frequencyOptions,
+      type: 'text',
+      placeholder: 'e.g., once a day, 2 or 3 times a day, daily',
     },
     {
       key: 'routeOfAdministration',
       label: 'Route Of Administration',
-      type: 'select',
-      options: routeOptions,
+      type: 'text',
+      placeholder: 'e.g., oral, by mouth, injection, topical',
     },
   ];
 
@@ -281,38 +291,81 @@ export const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
 
   return (
     <Card className="p-5">
-      <h3 className="text-h3 text-gray-900 mb-4">Medical History</h3>
-      <div className="space-y-6">
-        <DataTable
-          title="Surgery History"
-          columns={surgeryColumns}
-          rows={surgeryHistory}
-          onAddRow={handleAddSurgery}
-          onUpdateRow={handleUpdateSurgery}
-          onDeleteRow={handleDeleteSurgery}
-        />
-
-        <DataTable
-          title="Medical Conditions"
-          columns={medicalConditionColumns}
-          rows={medicalConditions}
-          onAddRow={handleAddCondition}
-          onUpdateRow={handleUpdateCondition}
-          onDeleteRow={handleDeleteCondition}
-        />
-
-        <DataTable
-          title="Medication History"
-          columns={medicationColumns}
-          rows={medications}
-          onAddRow={handleAddMedication}
-          onUpdateRow={handleUpdateMedication}
-          onDeleteRow={handleDeleteMedication}
-        />
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-h3 text-gray-900">Medical History</h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onMicClick();
+            }}
+            disabled={isProcessing}
+            className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+          >
+            {isProcessing ? (
+              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Mic className={`w-5 h-5 ${
+                isRecording 
+                  ? 'text-red-600 animate-pulse' 
+                  : isMicModeEnabled 
+                    ? 'text-green-600' 
+                    : 'text-gray-400'
+              }`} />
+            )}
+          </button>
+          {isRecording && (
+            <span className="text-body-sm text-red-600 font-medium">Recording...</span>
+          )}
+        </div>
       </div>
+      {micModePrompts ? (
+        <div>
+          {micModePrompts}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <DataTable
+            key={`surgeries-${surgeryHistory.length}-${surgeryHistory.map(s => s.id).join('-')}`}
+            title="Surgery History"
+            columns={surgeryColumns}
+            rows={surgeryHistory}
+            onAddRow={handleAddSurgery}
+            onUpdateRow={handleUpdateSurgery}
+            onDeleteRow={handleDeleteSurgery}
+          />
+
+          <DataTable
+            key={`conditions-${medicalConditions.length}-${medicalConditions.map(c => c.id).join('-')}`}
+            title="Medical Conditions"
+            columns={medicalConditionColumns}
+            rows={medicalConditions}
+            onAddRow={handleAddCondition}
+            onUpdateRow={handleUpdateCondition}
+            onDeleteRow={handleDeleteCondition}
+          />
+
+          <DataTable
+            key={`medications-${medications.length}-${medications.map(m => m.id).join('-')}`}
+            title="Medication History"
+            columns={medicationColumns}
+            rows={medications}
+            onAddRow={handleAddMedication}
+            onUpdateRow={handleUpdateMedication}
+            onDeleteRow={handleDeleteMedication}
+          />
+        </div>
+      )}
     </Card>
   );
 };
+
+
 
 
 

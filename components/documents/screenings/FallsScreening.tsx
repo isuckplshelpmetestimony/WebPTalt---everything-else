@@ -13,11 +13,23 @@ export interface FallsScreeningData {
 }
 
 interface FallsScreeningProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode;
   data: FallsScreeningData;
   onChange: (data: FallsScreeningData) => void;
 }
 
 export const FallsScreening: React.FC<FallsScreeningProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   data,
   onChange,
 }) => {
@@ -51,6 +63,12 @@ export const FallsScreening: React.FC<FallsScreeningProps> = ({
     <ScreeningSection
       title="Falls"
       questions={questions}
+      sectionId={sectionId}
+      isRecording={isRecording}
+      isProcessing={isProcessing}
+      isMicModeEnabled={isMicModeEnabled}
+      onMicClick={onMicClick}
+      micModePrompts={micModePrompts}
     >
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -135,6 +153,8 @@ export const FallsScreening: React.FC<FallsScreeningProps> = ({
     </ScreeningSection>
   );
 };
+
+
 
 
 

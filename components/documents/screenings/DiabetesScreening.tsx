@@ -13,11 +13,23 @@ export interface DiabetesScreeningData {
 }
 
 interface DiabetesScreeningProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode;
   data: DiabetesScreeningData;
   onChange: (data: DiabetesScreeningData) => void;
 }
 
 export const DiabetesScreening: React.FC<DiabetesScreeningProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   data,
   onChange,
 }) => {
@@ -87,9 +99,17 @@ export const DiabetesScreening: React.FC<DiabetesScreeningProps> = ({
     <ScreeningSection
       title="Diabetes"
       questions={questions}
+      sectionId={sectionId}
+      isRecording={isRecording}
+      isProcessing={isProcessing}
+      isMicModeEnabled={isMicModeEnabled}
+      onMicClick={onMicClick}
+      micModePrompts={micModePrompts}
     />
   );
 };
+
+
 
 
 

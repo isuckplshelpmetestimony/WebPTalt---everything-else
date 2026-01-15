@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card } from '../ui/Card';
 import { DataTable, TableColumn, TableRow } from './DataTable';
+import { Mic } from 'lucide-react';
 
 export interface PainArea extends TableRow {
   area: string;
@@ -19,6 +20,12 @@ export interface PainDescription extends TableRow {
 }
 
 interface PainHistorySectionProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode;
   painAreas: PainArea[];
   painDescriptions: PainDescription[];
   comments: string;
@@ -71,6 +78,12 @@ const descriptionOptions = [
 ];
 
 export const PainHistorySection: React.FC<PainHistorySectionProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   painAreas,
   painDescriptions,
   comments,
@@ -117,22 +130,20 @@ export const PainHistorySection: React.FC<PainHistorySectionProps> = ({
     {
       key: 'activityTime',
       label: 'Activity / Time',
-      type: 'select',
-      options: activityTimeOptions,
-      searchable: true,
+      type: 'text',
+      placeholder: 'e.g., Sitting for too long, bending over',
     },
     {
       key: 'symptoms',
       label: 'Symptoms',
-      type: 'select',
-      options: symptomsOptions,
+      type: 'text',
+      placeholder: 'e.g., sharp stabbing pain in lower back',
     },
     {
       key: 'description',
       label: 'Description',
-      type: 'select',
-      options: descriptionOptions,
-      searchable: true,
+      type: 'text',
+      placeholder: 'e.g., sharp, stabbing, radiates',
     },
   ];
 
@@ -180,41 +191,83 @@ export const PainHistorySection: React.FC<PainHistorySectionProps> = ({
 
   return (
     <Card className="p-5">
-      <h3 className="text-h3 text-gray-900 mb-4">Pain History</h3>
-      <div className="space-y-6">
-        <DataTable
-          title="Pain Area"
-          columns={painAreaColumns}
-          rows={painAreas}
-          onAddRow={handleAddPainArea}
-          onUpdateRow={handleUpdatePainArea}
-          onDeleteRow={handleDeletePainArea}
-        />
-
-        <DataTable
-          title="Pain Description"
-          columns={painDescriptionColumns}
-          rows={painDescriptions}
-          onAddRow={handleAddPainDescription}
-          onUpdateRow={handleUpdatePainDescription}
-          onDeleteRow={handleDeletePainDescription}
-        />
-
-        <div className="space-y-2">
-          <label className="text-body-sm font-medium text-gray-700">
-            Comments
-          </label>
-          <textarea
-            value={comments}
-            onChange={(e) => onCommentsChange(e.target.value)}
-            rows={4}
-            className="w-full px-2.5 py-1.5 border rounded-md text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent border-cairos-border"
-          />
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-h3 text-gray-900">Pain History</h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onMicClick();
+            }}
+            disabled={isProcessing}
+            className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+          >
+            {isProcessing ? (
+              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Mic className={`w-5 h-5 ${
+                isRecording 
+                  ? 'text-red-600 animate-pulse' 
+                  : isMicModeEnabled 
+                    ? 'text-green-600' 
+                    : 'text-gray-400'
+              }`} />
+            )}
+          </button>
+          {isRecording && (
+            <span className="text-body-sm text-red-600 font-medium">Recording...</span>
+          )}
         </div>
       </div>
+      {micModePrompts ? (
+        <div>
+          {micModePrompts}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <DataTable
+            key={`pain-areas-${painAreas.length}-${painAreas.map(a => a.id).join('-')}`}
+            title="Pain Area"
+            columns={painAreaColumns}
+            rows={painAreas}
+            onAddRow={handleAddPainArea}
+            onUpdateRow={handleUpdatePainArea}
+            onDeleteRow={handleDeletePainArea}
+          />
+
+          <DataTable
+            key={`pain-descriptions-${painDescriptions.length}-${painDescriptions.map(d => d.id).join('-')}`}
+            title="Pain Description"
+            columns={painDescriptionColumns}
+            rows={painDescriptions}
+            onAddRow={handleAddPainDescription}
+            onUpdateRow={handleUpdatePainDescription}
+            onDeleteRow={handleDeletePainDescription}
+          />
+
+          <div className="space-y-2">
+            <label className="text-body-sm font-medium text-gray-700">
+              Comments
+            </label>
+            <textarea
+              value={comments}
+              onChange={(e) => onCommentsChange(e.target.value)}
+              rows={4}
+              className="w-full px-2.5 py-1.5 border rounded-md text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent border-cairos-border"
+            />
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
+
+
 
 
 

@@ -61,6 +61,8 @@ export const ROMTable: React.FC<ROMTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Track which motion input is showing suggestions
+  const [activeMotionInput, setActiveMotionInput] = useState<string | null>(null);
 
   const filteredMotionOptions = motionOptions.filter(opt =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -160,12 +162,60 @@ export const ROMTable: React.FC<ROMTableProps> = ({
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-cairos-border hover:bg-gray-50">
                   <td className="px-2 py-2">
-                    <Select
-                      options={motionOptions}
-                      value={entry.motion}
-                      onChange={(e) => onUpdateEntry(entry.id, { motion: e.target.value })}
-                      className="text-body-xs"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={entry.motion || ''}
+                        onChange={(e) => {
+                          onUpdateEntry(entry.id, { motion: e.target.value });
+                          if (e.target.value.length > 0) {
+                            setActiveMotionInput(entry.id);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (entry.motion) {
+                            setActiveMotionInput(entry.id);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => setActiveMotionInput(null), 200);
+                        }}
+                        placeholder="Select motion..."
+                        className="w-full px-2 py-1 text-body-xs border border-cairos-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-cairos-primary"
+                      />
+                      {activeMotionInput === entry.id && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cairos-border rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                          {motionOptions
+                            .filter(opt => {
+                              const searchValue = (entry.motion || '').toLowerCase();
+                              return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                            })
+                            .slice(0, 10)
+                            .map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateEntry(entry.id, { motion: option.label });
+                                  setActiveMotionInput(null);
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 text-body-xs"
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          {motionOptions.filter(opt => {
+                            const searchValue = (entry.motion || '').toLowerCase();
+                            return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                          }).length === 0 && (
+                            <div className="px-3 py-2 text-body-xs text-gray-500">
+                              Type to see suggestions or enter custom motion
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <input

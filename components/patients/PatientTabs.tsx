@@ -71,3 +71,5 @@ export const PatientTabs: React.FC<PatientTabsProps> = ({
 
 
 
+
+

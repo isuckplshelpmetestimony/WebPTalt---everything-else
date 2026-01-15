@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
-import { AlertCircle, HelpCircle } from 'lucide-react';
+import { AlertCircle, HelpCircle, Mic } from 'lucide-react';
 
 export interface ScreeningQuestion {
   id: string;
@@ -28,6 +28,12 @@ interface ScreeningSectionProps {
   validation?: ScreeningValidation;
   children?: React.ReactNode;
   className?: string;
+  sectionId?: string;
+  isRecording?: boolean;
+  isProcessing?: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick?: () => void;
+  micModePrompts?: React.ReactNode;
 }
 
 export const ScreeningSection: React.FC<ScreeningSectionProps> = ({
@@ -36,6 +42,12 @@ export const ScreeningSection: React.FC<ScreeningSectionProps> = ({
   validation,
   children,
   className,
+  sectionId,
+  isRecording = false,
+  isProcessing = false,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
 }) => {
   const renderQuestion = (question: ScreeningQuestion) => {
     switch (question.type) {
@@ -243,22 +255,66 @@ export const ScreeningSection: React.FC<ScreeningSectionProps> = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-h3 text-gray-900">{title}</h3>
-          {validation && !validation.isValid && (
-            <div className="flex items-center gap-2 text-cairos-alert">
-              <AlertCircle className="w-5 h-5" />
-              <span className="text-body-sm">{validation.errorMessage}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {validation && !validation.isValid && (
+              <div className="flex items-center gap-2 text-cairos-alert">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-body-sm">{validation.errorMessage}</span>
+              </div>
+            )}
+            {onMicClick && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onMicClick();
+                  }}
+                  disabled={isProcessing}
+                  className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                    isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                >
+                  {isProcessing ? (
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Mic className={`w-5 h-5 ${
+                      isRecording 
+                        ? 'text-red-600 animate-pulse' 
+                        : isMicModeEnabled 
+                          ? 'text-green-600' 
+                          : 'text-gray-400'
+                    }`} />
+                  )}
+                </button>
+                {isRecording && (
+                  <span className="text-body-sm text-red-600 font-medium">Recording...</span>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-cairos-border">
-          {questions.map(renderQuestion)}
-          {children}
+          {micModePrompts ? (
+            <div>
+              {micModePrompts}
+            </div>
+          ) : (
+            <>
+              {questions.map(renderQuestion)}
+              {children}
+            </>
+          )}
         </div>
       </div>
     </Card>
   );
 };
+
+
 
 
 

@@ -6,6 +6,8 @@ import { ScreeningSection, ScreeningQuestion } from '../ScreeningSection';
 export interface DepressionScreeningData {
   hasBipolarDisorder?: 'yes' | 'no';
   screeningPerformed?: 'yes' | 'no';
+  screeningQuestion1?: string; // PHQ-2 Question 1 response
+  screeningQuestion2?: string; // PHQ-2 Question 2 response
   screeningResults?: 'positive' | 'negative';
   screeningToolDescription?: string;
   followUpPlan?: string[];
@@ -13,11 +15,23 @@ export interface DepressionScreeningData {
 }
 
 interface DepressionScreeningProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode;
   data: DepressionScreeningData;
   onChange: (data: DepressionScreeningData) => void;
 }
 
 export const DepressionScreening: React.FC<DepressionScreeningProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   data,
   onChange,
 }) => {
@@ -37,6 +51,13 @@ export const DepressionScreening: React.FC<DepressionScreeningProps> = ({
 
   const validation = validate();
 
+  const phq2ResponseOptions = [
+    { value: 'not-at-all', label: 'Not at all' },
+    { value: 'several-days', label: 'Several days' },
+    { value: 'more-than-half', label: 'More than half the days' },
+    { value: 'nearly-every-day', label: 'Nearly every day' },
+  ];
+
   const questions: ScreeningQuestion[] = [
     {
       id: 'bipolar',
@@ -54,9 +75,25 @@ export const DepressionScreening: React.FC<DepressionScreeningProps> = ({
       onChange: (value) => updateField('screeningPerformed', value),
     },
     {
+      id: 'screening-question-1',
+      label: 'Over the last 2 weeks, how often have you been bothered by little interest or pleasure in doing things?',
+      type: 'radio' as const,
+      options: phq2ResponseOptions,
+      value: data.screeningQuestion1,
+      onChange: (value) => updateField('screeningQuestion1', value),
+    },
+    {
+      id: 'screening-question-2',
+      label: 'Over the last 2 weeks, how often have you been bothered by feeling down, depressed, or hopeless?',
+      type: 'radio' as const,
+      options: phq2ResponseOptions,
+      value: data.screeningQuestion2,
+      onChange: (value) => updateField('screeningQuestion2', value),
+    },
+    {
       id: 'screening-results',
       label: 'Screening Results:',
-      type: 'radio',
+      type: 'radio' as const,
       options: [
         { value: 'positive', label: 'Positive' },
         { value: 'negative', label: 'Negative' },
@@ -67,8 +104,8 @@ export const DepressionScreening: React.FC<DepressionScreeningProps> = ({
     {
       id: 'screening-tool',
       label: 'Screening Tool Description or Reason for Patient Ineligibility:',
-      helpText: 'Describe the screening tool used or provide reason if patient is ineligible',
-      type: 'textarea',
+      helpText: 'Describe the screening tool used (e.g., PHQ-2, PHQ-9) or provide reason if patient is ineligible',
+      type: 'textarea' as const,
       value: data.screeningToolDescription,
       onChange: (value) => updateField('screeningToolDescription', value),
     },
@@ -87,10 +124,16 @@ export const DepressionScreening: React.FC<DepressionScreeningProps> = ({
       title="Depression Screening"
       questions={questions}
       validation={validation}
+      sectionId={sectionId}
+      isRecording={isRecording}
+      isProcessing={isProcessing}
+      isMicModeEnabled={isMicModeEnabled}
+      onMicClick={onMicClick}
+      micModePrompts={micModePrompts}
     >
       {data.screeningPerformed === 'yes' && (
         <>
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4 border-t border-cairos-border">
             <label className="text-body-sm font-medium text-gray-700">
               Follow Up Plan:
             </label>
@@ -139,6 +182,8 @@ export const DepressionScreening: React.FC<DepressionScreeningProps> = ({
     </ScreeningSection>
   );
 };
+
+
 
 
 

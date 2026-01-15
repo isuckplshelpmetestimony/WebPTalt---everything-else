@@ -65,6 +65,8 @@ export const MyotomesTable: React.FC<MyotomesTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Track which myotome input is showing suggestions
+  const [activeMyotomeInput, setActiveMyotomeInput] = useState<string | null>(null);
 
   const filteredMyotomeOptions = myotomeOptions.filter(opt =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -159,11 +161,60 @@ export const MyotomesTable: React.FC<MyotomesTableProps> = ({
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-cairos-border hover:bg-gray-50">
                   <td className="px-2 py-2">
-                    <Select
-                      options={myotomeOptions}
-                      value={entry.myotome}
-                      onChange={(e) => onUpdateEntry(entry.id, { myotome: e.target.value })}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={entry.myotome || ''}
+                        onChange={(e) => {
+                          onUpdateEntry(entry.id, { myotome: e.target.value });
+                          if (e.target.value.length > 0) {
+                            setActiveMyotomeInput(entry.id);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (entry.myotome) {
+                            setActiveMyotomeInput(entry.id);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => setActiveMyotomeInput(null), 200);
+                        }}
+                        placeholder="Select myotome..."
+                        className="w-full px-2 py-1 text-body-xs border border-cairos-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-cairos-primary"
+                      />
+                      {activeMyotomeInput === entry.id && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cairos-border rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                          {myotomeOptions
+                            .filter(opt => {
+                              const searchValue = (entry.myotome || '').toLowerCase();
+                              return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                            })
+                            .slice(0, 10)
+                            .map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateEntry(entry.id, { myotome: option.label });
+                                  setActiveMyotomeInput(null);
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 text-body-xs"
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          {myotomeOptions.filter(opt => {
+                            const searchValue = (entry.myotome || '').toLowerCase();
+                            return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                          }).length === 0 && (
+                            <div className="px-3 py-2 text-body-xs text-gray-500">
+                              Type to see suggestions or enter custom myotome
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Select
@@ -230,6 +281,8 @@ export const MyotomesTable: React.FC<MyotomesTableProps> = ({
     </div>
   );
 };
+
+
 
 
 

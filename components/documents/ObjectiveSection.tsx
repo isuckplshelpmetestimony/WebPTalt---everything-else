@@ -57,6 +57,85 @@ interface ObjectiveSectionProps {
   onMyotomeEntriesChange?: (entries: MyotomeEntry[]) => void;
   onDermatomeEntriesChange?: (entries: DermatomeEntry[]) => void;
   onReflexEntriesChange?: (entries: ReflexEntry[]) => void;
+  // Mic recording props for subsections
+  observationMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  aromMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  promMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  girthMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  muscleTestingMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  specialTestsMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  myotomesMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  dermatomesMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  reflexesMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  functionalTestingMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  currentFunctionalLimitationsMicProps?: {
+    isRecording: boolean;
+    isProcessing: boolean;
+    isMicModeEnabled: boolean;
+    onMicClick: () => void;
+  };
+  // Mic mode prompts for subsections
+  observationMicPrompts?: React.ReactNode;
+  aromMicPrompts?: React.ReactNode;
+  promMicPrompts?: React.ReactNode;
+  girthMicPrompts?: React.ReactNode;
+  muscleTestingMicPrompts?: React.ReactNode;
+  specialTestsMicPrompts?: React.ReactNode;
+  myotomesMicPrompts?: React.ReactNode;
+  dermatomesMicPrompts?: React.ReactNode;
+  reflexesMicPrompts?: React.ReactNode;
+  functionalTestingMicPrompts?: React.ReactNode;
+  currentFunctionalLimitationsMicPrompts?: React.ReactNode;
 }
 
 export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
@@ -93,6 +172,30 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
   onMyotomeEntriesChange,
   onDermatomeEntriesChange,
   onReflexEntriesChange,
+  // Mic props
+  observationMicProps,
+  aromMicProps,
+  promMicProps,
+  girthMicProps,
+  muscleTestingMicProps,
+  specialTestsMicProps,
+  myotomesMicProps,
+  dermatomesMicProps,
+  reflexesMicProps,
+  functionalTestingMicProps,
+  currentFunctionalLimitationsMicProps,
+  // Mic prompts
+  observationMicPrompts,
+  aromMicPrompts,
+  promMicPrompts,
+  girthMicPrompts,
+  muscleTestingMicPrompts,
+  specialTestsMicPrompts,
+  myotomesMicPrompts,
+  dermatomesMicPrompts,
+  reflexesMicPrompts,
+  functionalTestingMicPrompts,
+  currentFunctionalLimitationsMicPrompts,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [generalExpanded, setGeneralExpanded] = useState(true);
@@ -400,40 +503,73 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
 
   return (
     <Card className="p-5 mb-4">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between mb-4"
-      >
-        <div className="flex items-center gap-3">
+      <div className="w-full flex items-center justify-between mb-4">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-3 flex-1 text-left"
+        >
           <h3 className="text-h3 text-gray-900">Objective</h3>
           {isComplete && (
             <CheckCircle2 className="w-4 h-4 text-cairos-success" />
           )}
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setIsExpanded(!isExpanded)}
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Voice input"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <Mic className="w-5 h-5 text-gray-400" />
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
           </button>
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
-          )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="space-y-6 pt-4 border-t border-cairos-border">
           {/* Observation */}
           <div>
-            <label className="block text-body-sm font-medium text-gray-700 mb-2">
-              Observation (Posture, Gait, Palpation)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-body-sm font-medium text-gray-700">
+                Observation (Posture, Gait, Palpation)
+              </label>
+              {observationMicProps && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    observationMicProps.onMicClick();
+                  }}
+                  disabled={observationMicProps.isProcessing}
+                  className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                    observationMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  aria-label={observationMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                >
+                  {observationMicProps.isProcessing ? (
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Mic className={`w-5 h-5 ${
+                      observationMicProps.isRecording 
+                        ? 'text-red-600 animate-pulse' 
+                        : observationMicProps.isMicModeEnabled 
+                          ? 'text-green-600' 
+                          : 'text-gray-400'
+                    }`} />
+                  )}
+                </button>
+              )}
+            </div>
+            {observationMicPrompts ? (
+              <div>
+                {observationMicPrompts}
+              </div>
+            ) : (
             <textarea
               id="observation"
               value={observation}
@@ -447,6 +583,7 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
               placeholder="Describe posture, gait patterns, and palpation findings..."
               className="w-full px-3 py-2 border border-cairos-border rounded-xl text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[100px] resize-y"
             />
+            )}
           </div>
 
           {/* General Section */}
@@ -467,59 +604,249 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
               <div className="space-y-6">
                 {/* AROM */}
                 {onAROMEntriesChange && (
-                  <ROMTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">AROM</h5>
+                      {aromMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            aromMicProps.onMicClick();
+                          }}
+                          disabled={aromMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            aromMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={aromMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {aromMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              aromMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : aromMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {aromMicPrompts ? (
+                      <div className="mb-4">
+                        {aromMicPrompts}
+                      </div>
+                    ) : (
+                    <ROMTable
                     title="AROM"
                     entries={aromEntries}
                     onAddEntry={handleAddAROM}
                     onUpdateEntry={handleUpdateAROM}
-                    onDeleteEntry={handleDeleteAROM}
-                    onCopyToColumn={handleCopyAROMToColumn}
-                  />
+                      onDeleteEntry={handleDeleteAROM}
+                      onCopyToColumn={handleCopyAROMToColumn}
+                    />
+                    )}
+                  </div>
                 )}
 
                 {/* PROM */}
                 {onPROMEntriesChange && (
-                  <ROMTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">PROM</h5>
+                      {promMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            promMicProps.onMicClick();
+                          }}
+                          disabled={promMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            promMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={promMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {promMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              promMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : promMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {promMicPrompts ? (
+                      <div className="mb-4">
+                        {promMicPrompts}
+                      </div>
+                    ) : (
+                    <ROMTable
                     title="PROM"
                     entries={promEntries}
                     onAddEntry={handleAddPROM}
                     onUpdateEntry={handleUpdatePROM}
-                    onDeleteEntry={handleDeletePROM}
-                    onCopyToColumn={handleCopyPROMToColumn}
-                  />
+                      onDeleteEntry={handleDeletePROM}
+                      onCopyToColumn={handleCopyPROMToColumn}
+                    />
+                    )}
+                  </div>
                 )}
 
                 {/* Girth */}
                 {onGirthEntriesChange && (
-                  <GirthTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">Girth</h5>
+                      {girthMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            girthMicProps.onMicClick();
+                          }}
+                          disabled={girthMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            girthMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={girthMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {girthMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              girthMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : girthMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {girthMicPrompts ? (
+                      <div className="mb-4">
+                        {girthMicPrompts}
+                      </div>
+                    ) : (
+                    <GirthTable
                     entries={girthEntries}
                     onAddEntry={handleAddGirth}
                     onUpdateEntry={handleUpdateGirth}
-                    onDeleteEntry={handleDeleteGirth}
-                    onCopyToColumn={handleCopyGirthToColumn}
-                  />
+                      onDeleteEntry={handleDeleteGirth}
+                      onCopyToColumn={handleCopyGirthToColumn}
+                    />
+                    )}
+                  </div>
                 )}
 
                 {/* Muscle Testing */}
                 {onMuscleTestingEntriesChange && (
-                  <MuscleTestingTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">Muscle Testing</h5>
+                      {muscleTestingMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            muscleTestingMicProps.onMicClick();
+                          }}
+                          disabled={muscleTestingMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            muscleTestingMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={muscleTestingMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {muscleTestingMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              muscleTestingMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : muscleTestingMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {muscleTestingMicPrompts ? (
+                      <div className="mb-4">
+                        {muscleTestingMicPrompts}
+                      </div>
+                    ) : (
+                    <MuscleTestingTable
                     entries={muscleTestingEntries}
                     onAddEntry={handleAddMuscleTesting}
                     onUpdateEntry={handleUpdateMuscleTesting}
-                    onDeleteEntry={handleDeleteMuscleTesting}
-                    onCopyToColumn={handleCopyMuscleTestingToColumn}
-                  />
+                      onDeleteEntry={handleDeleteMuscleTesting}
+                      onCopyToColumn={handleCopyMuscleTestingToColumn}
+                    />
+                    )}
+                  </div>
                 )}
 
                 {/* Special Tests */}
                 {onSpecialTestEntriesChange && (
-                  <SpecialTestsTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">Special Tests</h5>
+                      {specialTestsMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            specialTestsMicProps.onMicClick();
+                          }}
+                          disabled={specialTestsMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            specialTestsMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={specialTestsMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {specialTestsMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              specialTestsMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : specialTestsMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {specialTestsMicPrompts ? (
+                      <div className="mb-4">
+                        {specialTestsMicPrompts}
+                      </div>
+                    ) : (
+                    <SpecialTestsTable
                     entries={specialTestEntries}
                     onAddEntry={handleAddSpecialTest}
                     onUpdateEntry={handleUpdateSpecialTest}
-                    onDeleteEntry={handleDeleteSpecialTest}
-                    onCopyToColumn={handleCopySpecialTestToColumn}
-                  />
+                      onDeleteEntry={handleDeleteSpecialTest}
+                      onCopyToColumn={handleCopySpecialTestToColumn}
+                    />
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -543,35 +870,149 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
               <div className="space-y-6">
                 {/* Myotomes */}
                 {onMyotomeEntriesChange && (
-                  <MyotomesTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">Myotomes</h5>
+                      {myotomesMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            myotomesMicProps.onMicClick();
+                          }}
+                          disabled={myotomesMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            myotomesMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={myotomesMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {myotomesMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              myotomesMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : myotomesMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {myotomesMicPrompts ? (
+                      <div className="mb-4">
+                        {myotomesMicPrompts}
+                      </div>
+                    ) : (
+                    <MyotomesTable
                     entries={myotomeEntries}
                     onAddEntry={handleAddMyotome}
                     onUpdateEntry={handleUpdateMyotome}
-                    onDeleteEntry={handleDeleteMyotome}
-                    onCopyToColumn={handleCopyMyotomeToColumn}
-                  />
+                      onDeleteEntry={handleDeleteMyotome}
+                      onCopyToColumn={handleCopyMyotomeToColumn}
+                    />
+                    )}
+                  </div>
                 )}
 
                 {/* Dermatomes */}
                 {onDermatomeEntriesChange && (
-                  <DermatomesTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">Dermatomes</h5>
+                      {dermatomesMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            dermatomesMicProps.onMicClick();
+                          }}
+                          disabled={dermatomesMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            dermatomesMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={dermatomesMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {dermatomesMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              dermatomesMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : dermatomesMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {dermatomesMicPrompts ? (
+                      <div className="mb-4">
+                        {dermatomesMicPrompts}
+                      </div>
+                    ) : (
+                    <DermatomesTable
                     entries={dermatomeEntries}
                     onAddEntry={handleAddDermatome}
                     onUpdateEntry={handleUpdateDermatome}
-                    onDeleteEntry={handleDeleteDermatome}
-                    onCopyToColumn={handleCopyDermatomeToColumn}
-                  />
+                      onDeleteEntry={handleDeleteDermatome}
+                      onCopyToColumn={handleCopyDermatomeToColumn}
+                    />
+                    )}
+                  </div>
                 )}
 
                 {/* Reflexes */}
                 {onReflexEntriesChange && (
-                  <ReflexesTable
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-body-sm font-medium text-gray-700">Reflexes</h5>
+                      {reflexesMicProps && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            reflexesMicProps.onMicClick();
+                          }}
+                          disabled={reflexesMicProps.isProcessing}
+                          className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                            reflexesMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          aria-label={reflexesMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                          {reflexesMicProps.isProcessing ? (
+                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Mic className={`w-5 h-5 ${
+                              reflexesMicProps.isRecording 
+                                ? 'text-red-600 animate-pulse' 
+                                : reflexesMicProps.isMicModeEnabled 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {reflexesMicPrompts ? (
+                      <div className="mb-4">
+                        {reflexesMicPrompts}
+                      </div>
+                    ) : (
+                    <ReflexesTable
                     entries={reflexEntries}
                     onAddEntry={handleAddReflex}
                     onUpdateEntry={handleUpdateReflex}
-                    onDeleteEntry={handleDeleteReflex}
-                    onCopyToColumn={handleCopyReflexToColumn}
-                  />
+                      onDeleteEntry={handleDeleteReflex}
+                      onCopyToColumn={handleCopyReflexToColumn}
+                    />
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -579,29 +1020,99 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
 
           {/* Functional Testing */}
           <div>
-            <label className="block text-body-sm font-medium text-gray-700 mb-2">
-              Functional Testing (LEFS, DASH, Sit-Stand, etc.)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-body-sm font-medium text-gray-700">
+                Functional Testing (LEFS, DASH, Sit-Stand, etc.)
+              </label>
+              {functionalTestingMicProps && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    functionalTestingMicProps.onMicClick();
+                  }}
+                  disabled={functionalTestingMicProps.isProcessing}
+                  className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                    functionalTestingMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  aria-label={functionalTestingMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                >
+                  {functionalTestingMicProps.isProcessing ? (
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Mic className={`w-5 h-5 ${
+                      functionalTestingMicProps.isRecording 
+                        ? 'text-red-600 animate-pulse' 
+                        : functionalTestingMicProps.isMicModeEnabled 
+                          ? 'text-green-600' 
+                          : 'text-gray-400'
+                    }`} />
+                  )}
+                </button>
+              )}
+            </div>
+            {functionalTestingMicPrompts ? (
+              <div>
+                {functionalTestingMicPrompts}
+              </div>
+            ) : (
             <textarea
               value={functionalTesting}
               onChange={(e) => onFunctionalTestingChange(e.target.value)}
               placeholder="Document functional assessment results and scores..."
               className="w-full px-3 py-2 border border-cairos-border rounded-xl text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[80px] resize-y"
             />
+            )}
           </div>
 
           {/* Current Functional Limitations */}
           {onCurrentFunctionalLimitationsChange && (
             <div>
-              <label className="block text-body-sm font-medium text-gray-700 mb-2">
-                Current Functional Limitations
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-body-sm font-medium text-gray-700">
+                  Current Functional Limitations
+                </label>
+                {currentFunctionalLimitationsMicProps && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      currentFunctionalLimitationsMicProps.onMicClick();
+                    }}
+                    disabled={currentFunctionalLimitationsMicProps.isProcessing}
+                    className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+                      currentFunctionalLimitationsMicProps.isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    aria-label={currentFunctionalLimitationsMicProps.isRecording ? 'Stop recording' : 'Start recording'}
+                  >
+                    {currentFunctionalLimitationsMicProps.isProcessing ? (
+                      <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Mic className={`w-5 h-5 ${
+                        currentFunctionalLimitationsMicProps.isRecording 
+                          ? 'text-red-600 animate-pulse' 
+                          : currentFunctionalLimitationsMicProps.isMicModeEnabled 
+                            ? 'text-green-600' 
+                            : 'text-gray-400'
+                      }`} />
+                    )}
+                  </button>
+                )}
+              </div>
+              {currentFunctionalLimitationsMicPrompts ? (
+                <div>
+                  {currentFunctionalLimitationsMicPrompts}
+                </div>
+              ) : (
               <textarea
                 value={currentFunctionalLimitations || ''}
                 onChange={(e) => onCurrentFunctionalLimitationsChange(e.target.value)}
                 placeholder="Document current functional limitations affecting daily activities..."
                 className="w-full px-3 py-2 border border-cairos-border rounded-xl text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[100px] resize-y"
               />
+              )}
             </div>
           )}
 

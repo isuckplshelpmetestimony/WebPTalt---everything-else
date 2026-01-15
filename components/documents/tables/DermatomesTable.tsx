@@ -69,6 +69,8 @@ export const DermatomesTable: React.FC<DermatomesTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Track which dermatome input is showing suggestions
+  const [activeDermatomeInput, setActiveDermatomeInput] = useState<string | null>(null);
 
   const filteredDermatomeOptions = dermatomeOptions.filter(opt =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -163,11 +165,60 @@ export const DermatomesTable: React.FC<DermatomesTableProps> = ({
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-cairos-border hover:bg-gray-50">
                   <td className="px-2 py-2">
-                    <Select
-                      options={dermatomeOptions}
-                      value={entry.dermatome}
-                      onChange={(e) => onUpdateEntry(entry.id, { dermatome: e.target.value })}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={entry.dermatome || ''}
+                        onChange={(e) => {
+                          onUpdateEntry(entry.id, { dermatome: e.target.value });
+                          if (e.target.value.length > 0) {
+                            setActiveDermatomeInput(entry.id);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (entry.dermatome) {
+                            setActiveDermatomeInput(entry.id);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => setActiveDermatomeInput(null), 200);
+                        }}
+                        placeholder="Select dermatome..."
+                        className="w-full px-2 py-1 text-body-xs border border-cairos-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-cairos-primary"
+                      />
+                      {activeDermatomeInput === entry.id && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cairos-border rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                          {dermatomeOptions
+                            .filter(opt => {
+                              const searchValue = (entry.dermatome || '').toLowerCase();
+                              return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                            })
+                            .slice(0, 10)
+                            .map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateEntry(entry.id, { dermatome: option.label });
+                                  setActiveDermatomeInput(null);
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 text-body-xs"
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          {dermatomeOptions.filter(opt => {
+                            const searchValue = (entry.dermatome || '').toLowerCase();
+                            return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                          }).length === 0 && (
+                            <div className="px-3 py-2 text-body-xs text-gray-500">
+                              Type to see suggestions or enter custom dermatome
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Select
@@ -234,6 +285,8 @@ export const DermatomesTable: React.FC<DermatomesTableProps> = ({
     </div>
   );
 };
+
+
 
 
 

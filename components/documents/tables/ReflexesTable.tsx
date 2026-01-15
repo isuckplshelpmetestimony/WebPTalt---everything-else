@@ -58,6 +58,8 @@ export const ReflexesTable: React.FC<ReflexesTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Track which reflex input is showing suggestions
+  const [activeReflexInput, setActiveReflexInput] = useState<string | null>(null);
 
   const filteredReflexOptions = reflexOptions.filter(opt =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -152,11 +154,60 @@ export const ReflexesTable: React.FC<ReflexesTableProps> = ({
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-cairos-border hover:bg-gray-50">
                   <td className="px-2 py-2">
-                    <Select
-                      options={reflexOptions}
-                      value={entry.reflexName}
-                      onChange={(e) => onUpdateEntry(entry.id, { reflexName: e.target.value })}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={entry.reflexName || ''}
+                        onChange={(e) => {
+                          onUpdateEntry(entry.id, { reflexName: e.target.value });
+                          if (e.target.value.length > 0) {
+                            setActiveReflexInput(entry.id);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (entry.reflexName) {
+                            setActiveReflexInput(entry.id);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => setActiveReflexInput(null), 200);
+                        }}
+                        placeholder="Select reflex..."
+                        className="w-full px-2 py-1 text-body-xs border border-cairos-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-cairos-primary"
+                      />
+                      {activeReflexInput === entry.id && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cairos-border rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                          {reflexOptions
+                            .filter(opt => {
+                              const searchValue = (entry.reflexName || '').toLowerCase();
+                              return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                            })
+                            .slice(0, 10)
+                            .map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateEntry(entry.id, { reflexName: option.label });
+                                  setActiveReflexInput(null);
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 text-body-xs"
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          {reflexOptions.filter(opt => {
+                            const searchValue = (entry.reflexName || '').toLowerCase();
+                            return opt.label.toLowerCase().includes(searchValue) && opt.value !== '';
+                          }).length === 0 && (
+                            <div className="px-3 py-2 text-body-xs text-gray-500">
+                              Type to see suggestions or enter custom reflex name
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Select
@@ -223,6 +274,8 @@ export const ReflexesTable: React.FC<ReflexesTableProps> = ({
     </div>
   );
 };
+
+
 
 
 

@@ -28,10 +28,17 @@ interface PreviousDocument {
 }
 
 interface SubjectiveSectionProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean; // New prop: mic mode enabled but not recording yet
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode; // Prompts to render inside this section
   chiefComplaint: string;
   onsetDate: string | Date;
   typeOfInjury?: string;
   specificInjury?: string;
+  additionalInjuryDetails?: string;
   surgeryDate?: string;
   surgeryType?: string;
   occupation?: string;
@@ -42,6 +49,7 @@ interface SubjectiveSectionProps {
   onOnsetDateChange: (value: string | Date) => void;
   onTypeOfInjuryChange?: (value: string) => void;
   onSpecificInjuryChange?: (value: string) => void;
+  onAdditionalInjuryDetailsChange?: (value: string) => void;
   onSurgeryDateChange?: (value: string) => void;
   onSurgeryTypeChange?: (value: string) => void;
   onOccupationChange?: (value: string) => void;
@@ -50,10 +58,17 @@ interface SubjectiveSectionProps {
 }
 
 export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   chiefComplaint,
   onsetDate,
   typeOfInjury,
   specificInjury,
+  additionalInjuryDetails,
   surgeryDate,
   surgeryType,
   occupation,
@@ -64,6 +79,7 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
   onOnsetDateChange,
   onTypeOfInjuryChange,
   onSpecificInjuryChange,
+  onAdditionalInjuryDetailsChange,
   onSurgeryDateChange,
   onSurgeryTypeChange,
   onOccupationChange,
@@ -169,35 +185,69 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
 
   return (
     <Card className="p-5 mb-4">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between mb-4"
-      >
-        <div className="flex items-center gap-3">
+      <div className="w-full flex items-center justify-between mb-4">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-3 flex-1 text-left"
+        >
           <h3 className="text-h3 text-gray-900">Subjective</h3>
           {isComplete && (
             <CheckCircle2 className="w-4 h-4 text-cairos-success" />
           )}
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Voice input"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onMicClick();
+            }}
+            disabled={isProcessing}
+            className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
           >
-            <Mic className="w-5 h-5 text-gray-400" />
+            {isProcessing ? (
+              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Mic className={`w-5 h-5 ${
+                isRecording 
+                  ? 'text-red-600 animate-pulse' 
+                  : isMicModeEnabled 
+                    ? 'text-green-600' 
+                    : 'text-gray-400'
+              }`} />
+            )}
           </button>
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+          {isRecording && (
+            <span className="text-body-sm text-red-600 font-medium">Recording...</span>
           )}
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="space-y-4 pt-4 border-t border-cairos-border">
+          {/* Show prompts instead of form when mic mode is enabled */}
+          {micModePrompts ? (
+            <div>
+              {micModePrompts}
+            </div>
+          ) : (
+            <>
           {/* Copy from Previous Document - Only show for Daily Notes, not Initial Evaluations */}
           {!isInitialEvaluation && previousDocuments.length > 0 && (
             <div className="relative" ref={copyMenuRef}>
@@ -323,6 +373,21 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
               />
             )}
 
+            {onAdditionalInjuryDetailsChange && (
+              <div>
+                <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                  Additional Injury Details
+                </label>
+                <textarea
+                  value={additionalInjuryDetails || ''}
+                  onChange={(e) => onAdditionalInjuryDetailsChange(e.target.value)}
+                  placeholder="e.g., possibly with radiculopathy, pain radiates to right leg"
+                  rows={2}
+                  className="w-full px-2.5 py-1.5 border rounded-md text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent border-cairos-border resize-y"
+                />
+              </div>
+            )}
+
             {onSurgeryDateChange && (
               <Input
                 type="date"
@@ -343,13 +408,18 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
             )}
 
             {onOccupationChange && (
-              <Input
-                type="text"
-                label="Occupation"
-                placeholder="e.g., Construction worker"
-                value={occupation || ''}
-                onChange={(e) => onOccupationChange(e.target.value)}
-              />
+              <div>
+                <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                  Occupation
+                </label>
+                <textarea
+                  value={occupation || ''}
+                  onChange={(e) => onOccupationChange(e.target.value)}
+                  placeholder="e.g., Construction worker"
+                  rows={2}
+                  className="w-full px-2.5 py-1.5 border rounded-md text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent border-cairos-border resize-y"
+                />
+              </div>
             )}
           </div>
 
@@ -423,6 +493,8 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
                 )}
               </div>
             </div>
+          )}
+            </>
           )}
         </div>
       )}

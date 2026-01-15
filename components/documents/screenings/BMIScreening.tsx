@@ -9,11 +9,23 @@ export interface BMIScreeningData {
 }
 
 interface BMIScreeningProps {
+  sectionId: string;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isMicModeEnabled?: boolean;
+  onMicClick: () => void;
+  micModePrompts?: React.ReactNode;
   data: BMIScreeningData;
   onChange: (data: BMIScreeningData) => void;
 }
 
 export const BMIScreening: React.FC<BMIScreeningProps> = ({
+  sectionId,
+  isRecording,
+  isProcessing,
+  isMicModeEnabled = false,
+  onMicClick,
+  micModePrompts,
   data,
   onChange,
 }) => {
@@ -60,6 +72,12 @@ export const BMIScreening: React.FC<BMIScreeningProps> = ({
     <ScreeningSection
       title="BMI"
       questions={questions}
+      sectionId={sectionId}
+      isRecording={isRecording}
+      isProcessing={isProcessing}
+      isMicModeEnabled={isMicModeEnabled}
+      onMicClick={onMicClick}
+      micModePrompts={micModePrompts}
     >
       {bmi !== null && (
         <div className="pt-4 border-t border-cairos-border">
@@ -82,6 +100,8 @@ export const BMIScreening: React.FC<BMIScreeningProps> = ({
     </ScreeningSection>
   );
 };
+
+
 
 
 
