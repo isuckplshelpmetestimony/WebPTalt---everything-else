@@ -111,7 +111,7 @@ export function ExtractionSummaryModal({
           <Button
             onClick={onClose}
             className={hasManyMissing ? 'flex-1' : 'w-full'}
-            variant="outline"
+            variant="secondary"
           >
             {hasManyMissing ? 'Review & Close' : 'Close'}
           </Button>
