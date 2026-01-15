@@ -844,6 +844,17 @@ export default function NewDocumentTypePage() {
             {/* SOAP Sections */}
             <div className="space-y-4">
               <SubjectiveSection
+                sectionId="current-condition"
+                isRecording={recordingSection === 'current-condition'}
+                isProcessing={isProcessingSection === 'current-condition'}
+                isMicModeEnabled={micModeSection === 'current-condition' && recordingSection !== 'current-condition'}
+                onMicClick={() => handleSectionMicClick('current-condition')}
+                micModePrompts={micModeSection === 'current-condition' ? (
+                  <MicModePrompts 
+                    sectionPrompts={subjectivePrompts.find(s => s.sectionId === 'current-condition')!} 
+                    isActive={true}
+                  />
+                ) : undefined}
                 chiefComplaint={chiefComplaint}
                 onsetDate={onsetDate}
                 typeOfInjury={typeOfInjury}
