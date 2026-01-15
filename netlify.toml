@@ -1,9 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -r requirements.txt && npm run build"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 [build.environment]
   NODE_VERSION = "18"
+  PIP_NO_CACHE_DIR = "1"
 
