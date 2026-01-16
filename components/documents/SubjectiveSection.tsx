@@ -6,9 +6,9 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
-import { ChevronDown, ChevronUp, CheckCircle2, Plus, X, Trash2, Copy, ChevronRight, Mic, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, Plus, X, Trash2, Copy, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils/date';
-import BodyDiagram, { PainLocation, PainType } from './BodyDiagram';
+// Removed BodyDiagram - replaced with structured pain tracking
 
 interface TreatmentRelated {
   id: string;
@@ -111,6 +111,8 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
   const [symptomCharacter, setSymptomCharacter] = useState<string[]>([]);
   const [frequency, setFrequency] = useState('');
   const [durationOfEpisodes, setDurationOfEpisodes] = useState('');
+  const [hepCompliance, setHepCompliance] = useState('');
+  const [hepComplianceReason, setHepComplianceReason] = useState('');
   const [twentyFourHourPattern, setTwentyFourHourPattern] = useState('');
   const [aggravatingFactors, setAggravatingFactors] = useState<string[]>([]);
   const [aggravatingOther, setAggravatingOther] = useState('');
@@ -148,8 +150,16 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
   const [priorPTExperience, setPriorPTExperience] = useState('');
   const [redFlagAcknowledged, setRedFlagAcknowledged] = useState(false);
   const [priorLevelOfFunction, setPriorLevelOfFunction] = useState('');
-  const [frontPainLocations, setFrontPainLocations] = useState<PainLocation[]>([]);
-  const [backPainLocations, setBackPainLocations] = useState<PainLocation[]>([]);
+  // Pain tracking by body part (for Daily Notes)
+  const [painfulAreas, setPainfulAreas] = useState<Array<{
+    id: string;
+    bodyPart: string;
+    currentPain: string;
+    previousPain?: string;
+    status: 'improving' | 'same' | 'worse' | 'new';
+  }>>([]);
+  
+  // Pain location fields (for Initial Evaluation)
   const [primaryLocation, setPrimaryLocation] = useState('');
   const [secondaryLocation, setSecondaryLocation] = useState('');
   const [radiationPattern, setRadiationPattern] = useState('');
@@ -290,20 +300,40 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
     ? ((parseFloat(currentPain) + parseFloat(worstPain) + parseFloat(bestPain)) / 3).toFixed(1)
     : '';
 
-  const handleFrontPainLocationAdd = (location: PainLocation) => {
-    setFrontPainLocations([...frontPainLocations, location]);
+  const commonBodyParts = [
+    'Cervical Spine', 'Upper Back', 'Lower Back', 'Left Shoulder', 'Right Shoulder',
+    'Left Elbow', 'Right Elbow', 'Left Wrist', 'Right Wrist', 'Left Hip', 'Right Hip',
+    'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Other'
+  ];
+
+  const addPainfulArea = () => {
+    setPainfulAreas([...painfulAreas, {
+      id: Date.now().toString(),
+      bodyPart: '',
+      currentPain: '',
+      status: 'new',
+    }]);
   };
 
-  const handleFrontPainLocationRemove = (id: string) => {
-    setFrontPainLocations(frontPainLocations.filter(l => l.id !== id));
+  const updatePainfulArea = (id: string, updates: Partial<typeof painfulAreas[0]>) => {
+    setPainfulAreas(painfulAreas.map(area => 
+      area.id === id ? { ...area, ...updates } : area
+    ));
   };
 
-  const handleBackPainLocationAdd = (location: PainLocation) => {
-    setBackPainLocations([...backPainLocations, location]);
+  const deletePainfulArea = (id: string) => {
+    setPainfulAreas(painfulAreas.filter(area => area.id !== id));
   };
 
-  const handleBackPainLocationRemove = (id: string) => {
-    setBackPainLocations(backPainLocations.filter(l => l.id !== id));
+  // Auto-calculate status based on pain levels
+  const calculateStatus = (current: string, previous?: string): 'improving' | 'same' | 'worse' | 'new' => {
+    if (!previous || previous === '') return 'new';
+    const currentNum = parseFloat(current);
+    const previousNum = parseFloat(previous);
+    if (isNaN(currentNum) || isNaN(previousNum)) return 'same';
+    if (currentNum < previousNum) return 'improving';
+    if (currentNum > previousNum) return 'worse';
+    return 'same';
   };
 
   const isComplete = chiefComplaint.trim().length > 0;
@@ -321,34 +351,6 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
           )}
         </button>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onMicClick();
-            }}
-            disabled={isProcessing}
-            className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${
-              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-          >
-            {isProcessing ? (
-              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Mic className={`w-5 h-5 ${
-                isRecording 
-                  ? 'text-red-600 animate-pulse' 
-                  : isMicModeEnabled 
-                    ? 'text-green-600' 
-                    : 'text-gray-400'
-              }`} />
-            )}
-          </button>
-          {isRecording && (
-            <span className="text-body-sm text-red-600 font-medium">Recording...</span>
-          )}
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
@@ -481,86 +483,319 @@ export const SubjectiveSection: React.FC<SubjectiveSectionProps> = ({
                 <p className="mt-1 text-body-xs text-gray-500 italic">
                   Auto-populated from intake form (editable)
                 </p>
+                {!isInitialEvaluation && previousDocuments.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const lastDoc = previousDocuments[0];
+                      if (lastDoc.chiefComplaint) {
+                        onChiefComplaintChange(lastDoc.chiefComplaint);
+                      }
+                    }}
+                    className="mt-2 flex items-center gap-1.5"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy from Previous Note
+                  </Button>
+                )}
               </div>
 
-              {/* 3. BODY DIAGRAM / PAIN LOCATION */}
+              {/* DAILY NOTE SPECIFIC FIELDS */}
+              {!isInitialEvaluation && (
+                <div className="space-y-4 pt-4 border-t border-cairos-border">
+                  {/* Current Pain Level with Previous Comparison */}
+                  <div>
+                    <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                      Current Pain Level (0-10)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={currentPain || ''}
+                        onChange={(e) => setCurrentPain(e.target.value)}
+                        placeholder="0-10"
+                        className="w-24"
+                      />
+                      <span className="text-body text-gray-600">/ 10</span>
+                      {previousDocuments.length > 0 && previousDocuments[0].chiefComplaint && (
+                        <span className="text-body-xs text-gray-500 ml-auto">
+                          Previous: {previousDocuments[0].chiefComplaint.match(/(\d+)\/10/)?.[1] || 'N/A'}/10
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pain Location Tracking - Structured List */}
+                  <div className="pt-4 border-t border-cairos-border">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-body-sm font-medium text-gray-700">
+                        Painful Areas & Progress Tracking
+                      </label>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={addPainfulArea}
+                        className="flex items-center gap-1.5"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Area
+                      </Button>
+                    </div>
+                    
+                    {painfulAreas.length === 0 ? (
+                      <div className="text-center py-8 bg-gray-50 rounded-xl border border-cairos-border">
+                        <p className="text-body-sm text-gray-500">No painful areas documented yet</p>
+                        <p className="text-body-xs text-gray-400 mt-1">Click "Add Area" to track pain by body part</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {painfulAreas.map((area) => {
+                          const status = calculateStatus(area.currentPain, area.previousPain);
+                          const statusColors = {
+                            improving: 'bg-green-50 border-green-200 text-green-800',
+                            same: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                            worse: 'bg-red-50 border-red-200 text-red-800',
+                            new: 'bg-blue-50 border-blue-200 text-blue-800',
+                          };
+                          const statusLabels = {
+                            improving: '✓ Improving',
+                            same: '→ Same',
+                            worse: '⚠ Worse',
+                            new: 'New',
+                          };
+
+                          return (
+                            <div key={area.id} className="border border-cairos-border rounded-xl p-4 bg-white">
+                              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                                <div>
+                                  <label className="block text-body-xs font-medium text-gray-700 mb-1">
+                                    Body Part
+                                  </label>
+                                  <Select
+                                    options={[
+                                      { value: '', label: 'Select...' },
+                                      ...commonBodyParts.map(part => ({ value: part, label: part })),
+                                    ]}
+                                    value={area.bodyPart}
+                                    onChange={(e) => updatePainfulArea(area.id, { bodyPart: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-body-xs font-medium text-gray-700 mb-1">
+                                    Current Pain (0-10)
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    value={area.currentPain}
+                                    onChange={(e) => {
+                                      const newPain = e.target.value;
+                                      const newStatus = calculateStatus(newPain, area.previousPain);
+                                      updatePainfulArea(area.id, { currentPain: newPain, status: newStatus });
+                                    }}
+                                    placeholder="0-10"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-body-xs font-medium text-gray-700 mb-1">
+                                    Previous Pain (0-10)
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    value={area.previousPain || ''}
+                                    onChange={(e) => {
+                                      const newPrevious = e.target.value;
+                                      const newStatus = calculateStatus(area.currentPain, newPrevious);
+                                      updatePainfulArea(area.id, { previousPain: newPrevious, status: newStatus });
+                                    }}
+                                    placeholder="N/A"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-body-xs font-medium text-gray-700 mb-1">
+                                    Status
+                                  </label>
+                                  <div className={`px-3 py-2 rounded-lg border text-body-xs font-semibold text-center ${statusColors[status]}`}>
+                                    {statusLabels[status]}
+                                  </div>
+                                </div>
+                                <div className="flex justify-end">
+                                  <button
+                                    onClick={() => deletePainfulArea(area.id)}
+                                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                    aria-label="Remove area"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-600" />
+                                  </button>
+                                </div>
+                              </div>
+                              {status === 'improving' && area.currentPain && area.previousPain && (
+                                <div className="mt-2 text-body-xs text-green-700">
+                                  ✓ Pain reduced from {area.previousPain}/10 to {area.currentPain}/10
+                                </div>
+                              )}
+                              {status === 'worse' && area.currentPain && area.previousPain && (
+                                <div className="mt-2 text-body-xs text-red-700">
+                                  ⚠ Pain increased from {area.previousPain}/10 to {area.currentPain}/10
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p className="mt-3 text-body-xs text-gray-500 italic">
+                      Track which body parts are still painful and compare to previous visit to monitor progress
+                    </p>
+                  </div>
+
+                  {/* Functional Progress Since Last Visit */}
+                  <div>
+                    <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                      Functional Progress Since Last Visit
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        value={progression}
+                        onChange={(e) => setProgression(e.target.value)}
+                        placeholder="e.g., 'Patient reports being able to climb 8 stairs today, up from 4 last week'"
+                        maxLength={500}
+                        className="w-full px-3 py-2 border border-cairos-border rounded-xl text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[100px] resize-y"
+                      />
+                      <div className="absolute bottom-2 right-2 text-body-xs text-gray-400">
+                        {progression.length}/500
+                      </div>
+                    </div>
+                    <p className="mt-1 text-body-xs text-gray-500 italic">
+                      Must be specific and measurable, not generic
+                    </p>
+                  </div>
+
+                  {/* HEP Compliance */}
+                  <div>
+                    <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                      HEP (Home Exercise Program) Compliance
+                    </label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Select
+                        options={[
+                          { value: '', label: 'Select...' },
+                          { value: 'compliant', label: 'Compliant' },
+                          { value: 'partially-compliant', label: 'Partially Compliant' },
+                          { value: 'non-compliant', label: 'Non-Compliant' },
+                        ]}
+                        value={hepCompliance}
+                        onChange={(e) => setHepCompliance(e.target.value)}
+                      />
+                      {hepCompliance === 'non-compliant' && (
+                        <Input
+                          type="text"
+                          placeholder="If non-compliant, reason?"
+                          value={hepComplianceReason}
+                          onChange={(e) => setHepComplianceReason(e.target.value)}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Aggravating/Easing Factors Update */}
+                  <div>
+                    <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                      Aggravating/Easing Factors Update
+                    </label>
+                    <textarea
+                      value={twentyFourHourPattern}
+                      onChange={(e) => setTwentyFourHourPattern(e.target.value)}
+                      placeholder="What makes it worse/better?"
+                      className="w-full px-3 py-2 border border-cairos-border rounded-xl text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[80px] resize-y"
+                    />
+                  </div>
+
+                  {/* Red/Yellow Flag Screening - Conditional */}
+                  <div>
+                    <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                      Red/Yellow Flag Screening
+                      <span className="text-body-xs text-gray-500 ml-2">(Only if patient age &gt;50 or history indicates need)</span>
+                    </label>
+                    <div className="space-y-2">
+                      {[
+                        'Unexplained weight loss',
+                        'Fever',
+                        'Night sweats',
+                        'Bowel/bladder changes',
+                        'Trauma',
+                      ].map((flag) => (
+                        <label key={flag} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={symptomCharacter.includes(flag)}
+                            onChange={() => toggleCheckbox(symptomCharacter, setSymptomCharacter, flag)}
+                            className="w-4 h-4 rounded border-cairos-border text-cairos-primary focus:ring-cairos-primary"
+                          />
+                          <span className="text-body-sm text-gray-700">{flag}</span>
+                        </label>
+                      ))}
+                      {symptomCharacter.length > 0 && (
+                        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-body-xs text-yellow-800">
+                              ⚠️ Red flag detected. Consider physician referral.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. PAIN LOCATION - Text Fields Only */}
               {isInitialEvaluation && (
                 <div>
                   <label className="block text-body-sm font-medium text-gray-700 mb-2">
-                    Body Diagram / Pain Location Visualization <span className="text-red-500">*</span>
+                    Pain Location <span className="text-red-500">*</span>
                   </label>
-                  <div className="border border-cairos-border rounded-xl p-4 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {/* Front View */}
-                      <div className="bg-white border border-cairos-border rounded-lg p-3">
-                        <p className="text-body-xs font-medium text-gray-600 mb-2">Front View</p>
-                        <BodyDiagram
-                          view="front"
-                          painLocations={frontPainLocations}
-                          onPainLocationAdd={handleFrontPainLocationAdd}
-                          onPainLocationRemove={handleFrontPainLocationRemove}
-                          className="h-64"
-                        />
-                      </div>
-                      {/* Back View */}
-                      <div className="bg-white border border-cairos-border rounded-lg p-3">
-                        <p className="text-body-xs font-medium text-gray-600 mb-2">Back View</p>
-                        <BodyDiagram
-                          view="back"
-                          painLocations={backPainLocations}
-                          onPainLocationAdd={handleBackPainLocationAdd}
-                          onPainLocationRemove={handleBackPainLocationRemove}
-                          className="h-64"
-                        />
-                      </div>
+                  <div className="space-y-3">
+                    <div>
+                      <Input
+                        type="text"
+                        label="Primary Location"
+                        placeholder="e.g., L4-L5 lumbar spine"
+                        value={primaryLocation}
+                        onChange={(e) => setPrimaryLocation(e.target.value)}
+                        className="bg-white"
+                      />
                     </div>
-                    <div className="flex items-center gap-4 text-body-xs mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-red-500 rounded"></div>
-                        <span>Primary pain</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-yellow-400 rounded"></div>
-                        <span>Secondary pain</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                        <span>Radiation</span>
-                      </div>
+                    <div>
+                      <Input
+                        type="text"
+                        label="Secondary Location(s)"
+                        placeholder="e.g., Cervical spine (compensatory tension)"
+                        value={secondaryLocation}
+                        onChange={(e) => setSecondaryLocation(e.target.value)}
+                        className="bg-white"
+                      />
                     </div>
-                    <div className="mt-4 space-y-3">
-                      <div>
-                        <Input
-                          type="text"
-                          label="Primary Location"
-                          placeholder="e.g., L4-L5 lumbar spine"
-                          value={primaryLocation}
-                          onChange={(e) => setPrimaryLocation(e.target.value)}
-                          className="bg-white"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          type="text"
-                          label="Secondary Location(s)"
-                          placeholder="e.g., Cervical spine (compensatory tension)"
-                          value={secondaryLocation}
-                          onChange={(e) => setSecondaryLocation(e.target.value)}
-                          className="bg-white"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          type="text"
-                          label="Radiation Pattern"
-                          placeholder="e.g., Right posterior leg following sciatic nerve distribution to lateral calf"
-                          value={radiationPattern}
-                          onChange={(e) => setRadiationPattern(e.target.value)}
-                          className="bg-white"
-                        />
-                      </div>
-                      <p className="mt-2 text-body-xs text-gray-500 italic">Manual entry by therapist during evaluation</p>
+                    <div>
+                      <Input
+                        type="text"
+                        label="Radiation Pattern"
+                        placeholder="e.g., Right posterior leg following sciatic nerve distribution to lateral calf"
+                        value={radiationPattern}
+                        onChange={(e) => setRadiationPattern(e.target.value)}
+                        className="bg-white"
+                      />
                     </div>
+                    <p className="mt-2 text-body-xs text-gray-500 italic">Document pain location(s) and radiation pattern</p>
                   </div>
                 </div>
               )}

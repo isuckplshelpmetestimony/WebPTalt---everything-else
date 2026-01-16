@@ -32,6 +32,8 @@ interface ObjectiveSectionProps {
   functionalTesting: string;
   currentFunctionalLimitations?: string;
   objectiveTreatments?: Treatment[];
+  patientResponseToTreatment?: string;
+  documentType?: 'PT Daily Note' | 'PT Initial Evaluation' | string;
   onObservationChange: (value: string) => void;
   onRangeOfMotionChange: (value: string) => void;
   onMuscleTestingChange: (value: string) => void;
@@ -40,6 +42,7 @@ interface ObjectiveSectionProps {
   onFunctionalTestingChange: (value: string) => void;
   onCurrentFunctionalLimitationsChange?: (value: string) => void;
   onObjectiveTreatmentsChange?: (treatments: Treatment[]) => void;
+  onPatientResponseToTreatmentChange?: (value: string) => void;
   // New structured data props
   aromEntries?: ROMEntry[];
   promEntries?: ROMEntry[];
@@ -147,6 +150,8 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
   functionalTesting,
   currentFunctionalLimitations,
   objectiveTreatments = [],
+  patientResponseToTreatment,
+  documentType,
   onObservationChange,
   onRangeOfMotionChange,
   onMuscleTestingChange,
@@ -155,6 +160,7 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
   onFunctionalTestingChange,
   onCurrentFunctionalLimitationsChange,
   onObjectiveTreatmentsChange,
+  onPatientResponseToTreatmentChange,
   // New structured data
   aromEntries = [],
   promEntries = [],
@@ -200,6 +206,8 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const [generalExpanded, setGeneralExpanded] = useState(true);
   const [neurologicalExpanded, setNeurologicalExpanded] = useState(true);
+  
+  const isDailyNote = documentType === 'PT Daily Note';
   
   const isComplete = observation.trim().length > 0 || 
     aromEntries.length > 0 || 
@@ -1124,7 +1132,26 @@ export const ObjectiveSection: React.FC<ObjectiveSectionProps> = ({
                 onAddTreatment={handleAddTreatment}
                 onUpdateTreatment={handleUpdateTreatment}
                 onDeleteTreatment={handleDeleteTreatment}
+                documentType={documentType}
               />
+            </div>
+          )}
+
+          {/* Patient Response to Treatment - Daily Note Only */}
+          {isDailyNote && onPatientResponseToTreatmentChange && (
+            <div className="pt-4 border-t border-cairos-border">
+              <label className="block text-body-sm font-medium text-gray-700 mb-2">
+                Patient Response to Treatment
+              </label>
+              <textarea
+                value={patientResponseToTreatment || ''}
+                onChange={(e) => onPatientResponseToTreatmentChange(e.target.value)}
+                placeholder="How did the patient respond? Any modifications needed? This feeds directly into Assessment section."
+                className="w-full px-3 py-2 border border-cairos-border rounded-xl text-body bg-white focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[100px] resize-y"
+              />
+              <p className="mt-1 text-body-xs text-gray-500 italic">
+                Document patient's response to treatments performed. This information will be used in the Assessment section.
+              </p>
             </div>
           )}
         </div>

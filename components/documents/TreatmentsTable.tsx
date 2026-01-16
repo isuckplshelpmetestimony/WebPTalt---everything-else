@@ -9,10 +9,15 @@ interface Treatment {
   status: 'performed' | 'not-performed';
   cptCode: string;
   description: string;
+  detailedDescription?: string; // REQUIRED for skilled justification
   settings?: string;
   totalMinutes: number;
   isHEP: boolean;
   justification?: string;
+  sets?: number;
+  reps?: number;
+  resistance?: string;
+  levelOfAssistance?: 'Independent' | 'Min A' | 'Mod A' | 'Max A' | 'Total A';
 }
 
 interface TreatmentsTableProps {
@@ -20,6 +25,7 @@ interface TreatmentsTableProps {
   onAddTreatment: () => void;
   onUpdateTreatment: (id: string, updates: Partial<Treatment>) => void;
   onDeleteTreatment: (id: string) => void;
+  documentType?: 'PT Daily Note' | 'PT Initial Evaluation' | string;
 }
 
 const cptCodeOptions = [
@@ -39,7 +45,9 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
   onAddTreatment,
   onUpdateTreatment,
   onDeleteTreatment,
+  documentType,
 }) => {
+  const isDailyNote = documentType === 'PT Daily Note';
   const totalUnits = treatments
     .filter(t => t.status === 'performed')
     .reduce((sum, t) => {
@@ -98,21 +106,47 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                   <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
                     Treatment
                     <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
-                      Description of treatment/exercise
+                      {isDailyNote ? 'Brief description' : 'Description of treatment/exercise'}
                     </span>
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
-                    Settings
-                    <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
-                      Modality parameters (optional)
-                    </span>
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
-                    Justification
-                    <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
-                      Based on patient goals
-                    </span>
-                  </th>
+                  {isDailyNote && (
+                    <>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs min-w-[300px]">
+                        Detailed Description
+                        <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
+                          Skilled justification (REQUIRED)
+                        </span>
+                      </th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
+                        Sets/Reps/Resistance
+                        <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
+                          Parameters
+                        </span>
+                      </th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
+                        Assistance
+                        <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
+                          Level of assistance
+                        </span>
+                      </th>
+                    </>
+                  )}
+                  {!isDailyNote && (
+                    <>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
+                        Settings
+                        <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
+                          Modality parameters (optional)
+                        </span>
+                      </th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-body-xs">
+                        Justification
+                        <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
+                          Based on patient goals
+                        </span>
+                      </th>
+                    </>
+                  )}
                   <th className="text-right py-3 px-4 font-semibold text-gray-700 text-body-xs">
                     Minutes
                     <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
@@ -122,7 +156,7 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                   <th className="text-center py-3 px-4 font-semibold text-gray-700 text-body-xs">
                     HEP
                     <span className="block text-body-xs font-normal text-gray-500 mt-0.5">
-                      Home Exercise Program
+                      Home Exercise
                     </span>
                   </th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700 text-body-xs w-12"></th>
@@ -158,28 +192,93 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                         type="text"
                         value={treatment.description}
                         onChange={(e) => onUpdateTreatment(treatment.id, { description: e.target.value })}
-                        placeholder="e.g., AROM Extension, L-Spine Flexion, Patient Education"
-                        className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-w-[200px]"
+                        placeholder={isDailyNote ? "e.g., AROM Extension, L-Spine Flexion" : "e.g., AROM Extension, L-Spine Flexion, Patient Education"}
+                        className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-w-[150px]"
                       />
                     </td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={treatment.settings || ''}
-                        onChange={(e) => onUpdateTreatment(treatment.id, { settings: e.target.value })}
-                        placeholder="e.g., 10 min @ 110°F, Level 3"
-                        className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-w-[120px]"
-                      />
-                    </td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={treatment.justification || ''}
-                        onChange={(e) => onUpdateTreatment(treatment.id, { justification: e.target.value })}
-                        placeholder="e.g., To improve ROM per goals"
-                        className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-w-[180px]"
-                      />
-                    </td>
+                    {isDailyNote ? (
+                      <>
+                        <td className="py-3 px-4">
+                          <textarea
+                            value={treatment.detailedDescription || ''}
+                            onChange={(e) => onUpdateTreatment(treatment.id, { detailedDescription: e.target.value })}
+                            placeholder="✅ GOOD: Therapeutic Exercise (97110): Squat progression 3x10 with 20lb kettlebell. Patient required tactile facilitation to maintain neutral spine during descent, preventing pelvic tilt. Skilled cueing necessary to ensure proper motor recruitment for lumbar stabilization.&#10;&#10;❌ BAD: Patient performed squats 3x10. Tolerated well."
+                            className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-h-[100px] resize-y"
+                            rows={3}
+                          />
+                          {!treatment.detailedDescription && treatment.status === 'performed' && (
+                            <p className="text-body-xs text-yellow-600 mt-1">
+                              ⚠️ Detailed description required for skilled justification
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                value={treatment.sets || ''}
+                                onChange={(e) => onUpdateTreatment(treatment.id, { sets: Number(e.target.value) || undefined })}
+                                placeholder="Sets"
+                                className="w-16 text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary"
+                                min="0"
+                              />
+                              <span className="text-body-xs text-gray-500">×</span>
+                              <input
+                                type="number"
+                                value={treatment.reps || ''}
+                                onChange={(e) => onUpdateTreatment(treatment.id, { reps: Number(e.target.value) || undefined })}
+                                placeholder="Reps"
+                                className="w-16 text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary"
+                                min="0"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={treatment.resistance || ''}
+                              onChange={(e) => onUpdateTreatment(treatment.id, { resistance: e.target.value })}
+                              placeholder="Resistance (e.g., 20lb, Red band)"
+                              className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            value={treatment.levelOfAssistance || ''}
+                            onChange={(e) => onUpdateTreatment(treatment.id, { levelOfAssistance: e.target.value as Treatment['levelOfAssistance'] || undefined })}
+                            className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary bg-white"
+                          >
+                            <option value="">Select...</option>
+                            <option value="Independent">Independent</option>
+                            <option value="Min A">Min A</option>
+                            <option value="Mod A">Mod A</option>
+                            <option value="Max A">Max A</option>
+                            <option value="Total A">Total A</option>
+                          </select>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-3 px-4">
+                          <input
+                            type="text"
+                            value={treatment.settings || ''}
+                            onChange={(e) => onUpdateTreatment(treatment.id, { settings: e.target.value })}
+                            placeholder="e.g., 10 min @ 110°F, Level 3"
+                            className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-w-[120px]"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <input
+                            type="text"
+                            value={treatment.justification || ''}
+                            onChange={(e) => onUpdateTreatment(treatment.id, { justification: e.target.value })}
+                            placeholder="e.g., To improve ROM per goals"
+                            className="w-full text-body-xs border border-cairos-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cairos-primary focus:border-transparent min-w-[180px]"
+                          />
+                        </td>
+                      </>
+                    )}
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-1">
                         <input
@@ -218,7 +317,7 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50 border-t-2 border-cairos-border font-semibold">
-                  <td colSpan={5} className="py-3 px-4 text-gray-900 text-body-sm">
+                  <td colSpan={isDailyNote ? 4 : 5} className="py-3 px-4 text-gray-900 text-body-sm">
                     Total (Performed treatments only)
                   </td>
                   <td className="py-3 px-4 text-right text-gray-900 text-body-sm">

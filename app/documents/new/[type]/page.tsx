@@ -17,6 +17,9 @@ import { AssessmentSection } from '@/components/documents/AssessmentSection';
 import { Problem } from '@/components/documents/ProblemList';
 import { GoalsSection } from '@/components/documents/GoalsSection';
 import { PlanSection } from '@/components/documents/PlanSection';
+import { DailyNoteObjectiveSection } from '@/components/documents/DailyNoteObjectiveSection';
+import { DailyNoteAssessmentSection } from '@/components/documents/DailyNoteAssessmentSection';
+import { DailyNotePlanSection } from '@/components/documents/DailyNotePlanSection';
 import dynamic from 'next/dynamic';
 import { CommonPhrasesLibrary } from '@/components/documents/CommonPhrasesLibrary';
 
@@ -435,6 +438,7 @@ export default function NewDocumentTypePage() {
   const [functionalTesting, setFunctionalTesting] = useState('');
   const [currentFunctionalLimitations, setCurrentFunctionalLimitations] = useState('');
   const [objectiveTreatments, setObjectiveTreatments] = useState<Treatment[]>([]);
+  const [patientResponseToTreatment, setPatientResponseToTreatment] = useState('');
   
   // New structured table entries
   const [aromEntries, setAROMEntries] = useState<ROMEntry[]>([]);
@@ -877,6 +881,15 @@ export default function NewDocumentTypePage() {
                 onCreateGoal={handleCreateGoal}
               />
 
+              {/* Objective Section */}
+              <DailyNoteObjectiveSection />
+
+              {/* Assessment Section */}
+              <DailyNoteAssessmentSection />
+
+              {/* Plan Section */}
+              <DailyNotePlanSection />
+
               {showBilling && (
                 <BillingSection
                   objectiveTreatments={objectiveTreatments}
@@ -887,35 +900,36 @@ export default function NewDocumentTypePage() {
                   timeIn={timeIn}
                   timeOut={timeOut}
                   onChargesChange={setBillingCharges}
+                  documentType={documentType}
                 />
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-cairos-border">
-              <Button
-                variant="cancel"
-                onClick={() => router.back()}
-              >
-                Cancel
-              </Button>
-              <div className="flex items-center gap-2">
+            {/* Action Buttons - Sticky Bar */}
+            <div className="sticky bottom-0 bg-white border-t-2 border-cairos-border mt-6 pt-4 pb-4 -mx-6 px-6">
+              <div className="flex items-center justify-between">
                 <Button
-                  variant="secondary"
-                  onClick={() => setIsPhrasesOpen(true)}
-                  className="flex items-center gap-1.5"
+                  variant="cancel"
+                  onClick={() => router.back()}
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  Common Phrases
+                  Cancel
                 </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleSave}
-                  className="flex items-center gap-1.5"
-                >
-                  <FileText className="w-4 h-4" />
-                  Save Document
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleSave}
+                    className="flex items-center gap-1.5"
+                  >
+                    💾 Save Draft
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSave}
+                    className="flex items-center gap-1.5"
+                  >
+                    ✅ Save & Submit for Billing
+                  </Button>
+                </div>
               </div>
             </div>
           </>
@@ -1279,6 +1293,8 @@ export default function NewDocumentTypePage() {
                       functionalTesting={functionalTesting}
                       currentFunctionalLimitations={currentFunctionalLimitations}
                       objectiveTreatments={objectiveTreatments}
+                      patientResponseToTreatment={patientResponseToTreatment}
+                      documentType={documentType}
                       onObservationChange={setObservation}
                       onRangeOfMotionChange={setRangeOfMotion}
                       onMuscleTestingChange={setMuscleTesting}
@@ -1287,6 +1303,7 @@ export default function NewDocumentTypePage() {
                       onFunctionalTestingChange={setFunctionalTesting}
                       onCurrentFunctionalLimitationsChange={setCurrentFunctionalLimitations}
                       onObjectiveTreatmentsChange={setObjectiveTreatments}
+                      onPatientResponseToTreatmentChange={setPatientResponseToTreatment}
                       // New structured table entries
                       aromEntries={aromEntries}
                       promEntries={promEntries}
@@ -1505,7 +1522,8 @@ export default function NewDocumentTypePage() {
                       timeIn={timeIn}
                       timeOut={timeOut}
                       onChargesChange={setBillingCharges}
-                    />
+                      documentType={documentType}
+                />
                   )}
 
                   {!activeSection && (

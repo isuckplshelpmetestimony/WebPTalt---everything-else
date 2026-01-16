@@ -6,10 +6,16 @@ export interface Treatment {
   status: 'performed' | 'not-performed';
   cptCode: string;
   description: string;
+  detailedDescription?: string; // REQUIRED for skilled justification - detailed narrative
   settings?: string;
   totalMinutes: number;
   isHEP: boolean;
   justification?: string;
+  // Additional structured fields for better documentation
+  sets?: number;
+  reps?: number;
+  resistance?: string; // e.g., "20lb kettlebell", "Red resistance band", "Bodyweight"
+  levelOfAssistance?: 'Independent' | 'Min A' | 'Mod A' | 'Max A' | 'Total A';
 }
 
 // CPT Code descriptions
